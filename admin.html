@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin – Excellent Mandarin Course</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Fredoka+One&display=swap" rel="stylesheet">
+<script src="api.js"></script>
+<style>
+:root{
+  --cream:#FFF9E6;--red:#C8281E;--red2:#A01E15;--red-bg:#FFF0EF;
+  --yellow:#F5C842;--yellow2:#E8B820;--dark:#2A1515;
+  --green:#059669;--teal:#0D9488;--purple:#7C3AED;
+  --muted:#7C6060;--border:#E8D8C8;--white:#FFFFFF;--bg:#FFF4DC;
+  --red-err:#EF4444;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--dark);min-height:100vh}
+a{text-decoration:none;color:inherit}
+input,select,textarea,button{font-family:'Nunito',sans-serif}
+
+#loginScreen{position:fixed;inset:0;background:linear-gradient(135deg,var(--dark) 0%,#3A1A1A 100%);display:flex;align-items:center;justify-content:center;z-index:999;padding:20px}
+.login-box{background:var(--white);border-radius:24px;padding:36px 32px;width:100%;max-width:380px;box-shadow:0 24px 80px rgba(0,0,0,.4);text-align:center}
+.login-logo{width:80px;height:80px;margin:0 auto 14px;display:block;border-radius:14px;object-fit:contain;background:var(--yellow);padding:4px}
+.login-logo-fb{width:80px;height:80px;background:var(--yellow);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:900;color:var(--dark);margin:0 auto 14px}
+.login-title{font-family:'Fredoka One',cursive;font-size:24px;margin-bottom:2px}
+.login-sub{font-size:13px;color:var(--muted);margin-bottom:24px}
+.form-group{text-align:left;margin-bottom:14px}
+.form-group label{font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.form-group input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:14px;font-weight:600;color:var(--dark);outline:none;transition:border-color .2s}
+.form-group input:focus{border-color:var(--red)}
+.pw-wrap{position:relative}
+.pw-wrap input{padding-right:40px}
+.pw-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--muted)}
+.btn-login{width:100%;background:var(--red);color:#fff;border:none;padding:13px;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;transition:all .2s;margin-top:6px}
+.btn-login:hover{background:var(--red2);transform:translateY(-1px)}
+.login-err{background:#FFF1F2;border:1px solid #FFD6DA;border-radius:10px;padding:10px 14px;font-size:13px;color:var(--red-err);display:none;margin-bottom:12px}
+
+#appShell{display:none;flex-direction:column;min-height:100vh}
+.app-header{background:var(--dark);height:60px;display:flex;align-items:center;padding:0 20px;gap:12px;position:sticky;top:0;z-index:100;flex-shrink:0}
+.logo-img-sm{width:36px;height:36px;border-radius:9px;object-fit:contain;background:var(--yellow);padding:2px;flex-shrink:0}
+.logo-fb-sm{width:36px;height:36px;background:var(--yellow);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:var(--dark);flex-shrink:0;display:none}
+.app-title{font-family:'Fredoka One',cursive;font-size:18px;color:#fff}
+.app-sub{font-size:11px;color:#C8A8A8;margin-top:-2px}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.btn-logout{background:rgba(255,255,255,.1);color:#D6D3D1;border:1px solid rgba(255,255,255,.15);padding:7px 16px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
+.btn-logout:hover{background:var(--red-err);color:#fff;border-color:transparent}
+
+.tab-nav{background:var(--dark);border-top:1px solid #3A1A1A;padding:0 12px;display:flex;overflow-x:auto;gap:2px;flex-shrink:0;scrollbar-width:none}
+.tab-nav::-webkit-scrollbar{display:none}
+.tab-btn{background:none;border:none;color:#C8A8A8;font-size:13px;font-weight:700;padding:12px 16px;cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent;transition:all .2s;display:flex;align-items:center;gap:6px}
+.tab-btn:hover{color:var(--yellow)}
+.tab-btn.active{color:var(--yellow);border-bottom-color:var(--yellow)}
+
+.app-content{flex:1;padding:20px;max-width:1200px;margin:0 auto;width:100%}
+.section-card{background:var(--white);border-radius:18px;padding:20px;margin-bottom:18px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+.card-head h3{font-weight:800;font-size:16px;display:flex;align-items:center;gap:8px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media(max-width:768px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+
+.stat-card{border-radius:16px;padding:18px;position:relative;overflow:hidden}
+.stat-card .s-icon{font-size:28px;margin-bottom:8px}
+.stat-card .s-val{font-family:'Fredoka One',cursive;font-size:32px;line-height:1}
+.stat-card .s-label{font-size:12px;font-weight:700;margin-top:4px;opacity:.7}
+.sc-red{background:var(--red-bg);color:var(--red2)}
+.sc-teal{background:#F0FDFA;color:var(--teal)}
+.sc-green{background:#ECFDF5;color:var(--green)}
+.sc-purple{background:#F5F3FF;color:var(--purple)}
+.sc-yellow{background:#FFFBEB;color:#92400E}
+
+.table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;min-width:500px}
+thead tr{background:var(--bg)}
+th{padding:10px 14px;font-size:12px;font-weight:700;text-align:left;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+td{padding:10px 14px;font-size:13px;border-top:1px solid var(--border);vertical-align:middle}
+tr:hover td{background:#FFFAEC}
+
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.badge-green{background:#ECFDF5;color:var(--green)}
+.badge-red{background:#FFF1F2;color:var(--red-err)}
+.badge-yellow{background:#FFFBEB;color:#92400E}
+.badge-teal{background:#F0FDFA;color:var(--teal)}
+.badge-gray{background:#F5F5F4;color:var(--muted)}
+
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;font-size:12px;font-weight:700;border:none;cursor:pointer;transition:all .2s}
+.btn-sm{padding:5px 10px;font-size:11px;border-radius:8px}
+.btn-primary{background:var(--red);color:#fff}.btn-primary:hover{background:var(--red2)}
+.btn-danger{background:#FFF1F2;color:var(--red-err);border:1px solid #FFD6DA}.btn-danger:hover{background:var(--red-err);color:#fff;border-color:var(--red-err)}
+.btn-teal{background:#F0FDFA;color:var(--teal);border:1px solid #CCFBF1}.btn-teal:hover{background:var(--teal);color:#fff;border-color:var(--teal)}
+.btn-green{background:#ECFDF5;color:var(--green);border:1px solid #A7F3D0}.btn-green:hover{background:var(--green);color:#fff;border-color:var(--green)}
+.btn-dark{background:var(--dark);color:#fff}.btn-dark:hover{background:#3A1A1A}
+.btn-yellow{background:var(--yellow);color:var(--dark)}.btn-yellow:hover{background:var(--yellow2)}
+
+.add-form{background:var(--bg);border:2px dashed var(--border);border-radius:14px;padding:18px;margin-top:14px;display:none}
+.add-form.open{display:block}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+@media(max-width:480px){.form-row,.form-row-3{grid-template-columns:1fr}}
+.form-field label{font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.form-field input,.form-field select,.form-field textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;color:var(--dark);outline:none;background:var(--white);transition:border-color .2s}
+.form-field input:focus,.form-field select:focus,.form-field textarea:focus{border-color:var(--red)}
+.form-field textarea{resize:vertical;min-height:80px}
+.form-actions{display:flex;gap:8px;margin-top:4px}
+
+.wa-preview{background:#1C1917;border-radius:14px;padding:18px;font-family:monospace;font-size:13px;color:#d4d4d4;white-space:pre-wrap;line-height:1.7;border:1px solid #2D2520}
+.wa-preview .traffic{display:flex;gap:6px;margin-bottom:12px}
+.wa-preview .dot{width:12px;height:12px;border-radius:50%}
+.star-count{display:inline-flex;align-items:center;gap:4px;background:#FFFBEB;color:#92400E;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700}
+
+.wizard-steps{display:flex;align-items:center;gap:0;margin-bottom:20px}
+.wstep{display:flex;align-items:center}
+.wstep-dot{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;background:var(--border);color:var(--muted);flex-shrink:0;transition:all .3s}
+.wstep-dot.done{background:var(--green);color:#fff}
+.wstep-dot.active{background:var(--red);color:#fff}
+.wstep-line{flex:1;height:2px;background:var(--border);min-width:24px;transition:background .3s}
+.wstep-line.done{background:var(--green)}
+
+.absensi-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:var(--white)}
+.toggle-group{display:flex;gap:6px}
+.toggle-btn{padding:6px 14px;border-radius:8px;border:1.5px solid var(--border);background:var(--white);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;color:var(--muted)}
+.toggle-btn.hadir{border-color:var(--green);background:#ECFDF5;color:var(--green)}
+.toggle-btn.absen{border-color:var(--red-err);background:#FFF1F2;color:var(--red-err)}
+
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal-box{background:var(--white);border-radius:20px;padding:28px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;position:relative}
+.modal-close{position:absolute;top:16px;right:16px;background:var(--bg);border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.modal-title{font-weight:800;font-size:18px;margin-bottom:16px}
+
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--dark);color:#fff;padding:12px 22px;border-radius:999px;font-size:13px;font-weight:700;z-index:9999;transition:transform .3s;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#toast.success{background:var(--green)}
+#toast.error{background:var(--red-err)}
+
+.spinner{display:inline-block;width:18px;height:18px;border:3px solid rgba(200,40,30,.3);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tab-page{display:none}
+.tab-page.active{display:block}
+
+.qa-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.qa-btn{background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:14px;text-align:center;cursor:pointer;transition:all .2s;font-size:12px;font-weight:700;color:var(--dark)}
+.qa-btn:hover{border-color:var(--red);color:var(--red);background:var(--red-bg)}
+.qa-btn .qa-icon{font-size:24px;margin-bottom:6px;display:block}
+
+.filter-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
+.filter-row select,.filter-row input{padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;background:var(--white);outline:none;color:var(--dark)}
+.filter-row select:focus,.filter-row input:focus{border-color:var(--red)}
+
+.reward-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;background:var(--white);margin-bottom:8px;transition:all .2s}
+.reward-item:hover{border-color:var(--red);background:var(--red-bg)}
+.reward-icon-box{width:44px;height:44px;background:#FFFBEB;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.fee-display{background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;color:var(--dark)}
+
+.prog-tag{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;margin-right:3px;text-transform:uppercase;letter-spacing:.3px}
+.prog-private{background:#F5F3FF;color:var(--purple)}
+.prog-semi{background:#F0FDFA;color:var(--teal)}
+.prog-reguler{background:#ECFDF5;color:var(--green)}
+.prog-online{background:#FFFBEB;color:#92400E}
+.prog-onsite{background:var(--red-bg);color:var(--red)}
+
+/* SLIP GAJI */
+.slip-wrap{font-family:'Nunito',sans-serif;border:1.5px solid var(--border);border-radius:16px;overflow:hidden;background:#fff;max-width:760px}
+.slip-header{padding:22px 28px;display:flex;justify-content:space-between;align-items:flex-start}
+.slip-confidential{background:#E8476A;color:#fff;padding:6px 16px;border-radius:8px;font-weight:700;font-size:12px}
+.slip-title{text-align:center;padding:16px 28px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin:0 28px}
+.slip-info{padding:18px 28px}
+.slip-info table{width:100%;border-collapse:collapse;font-size:13px}
+.slip-info td{padding:5px 6px;vertical-align:top}
+.slip-tables{padding:0 28px 20px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.slip-table{width:100%;border-collapse:collapse;font-size:13px;border-radius:8px;overflow:hidden}
+.slip-table th{padding:10px 12px;text-align:left;color:#fff;font-weight:700}
+.slip-table td{padding:10px 12px;border-bottom:1px solid var(--border)}
+.slip-table .total-row td{font-weight:800;background:var(--bg)}
+.slip-footer{padding:14px 28px;border-top:2px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+@media print{
+  body > *:not(#printArea){display:none!important}
+  #printArea{display:block!important;position:fixed;inset:0;padding:32px}
+  .slip-wrap{border:none;max-width:100%}
+}
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-box">
+    <img src="logo.png" alt="EMC" class="login-logo" onerror="this.style.display='none';document.getElementById('loginLogoFb').style.display='flex'">
+    <div class="login-logo-fb" id="loginLogoFb" style="display:none">棒</div>
+    <div class="login-title">Panel Admin</div>
+    <div class="login-sub">Excellent Mandarin Course</div>
+    <div class="login-err" id="loginErr">Password salah. Coba lagi.</div>
+    <div class="form-group">
+      <label>Password</label>
+      <div class="pw-wrap">
+        <input type="password" id="pwInput" placeholder="Masukkan password..." onkeydown="if(event.key==='Enter')doLogin()">
+        <button class="pw-eye" onclick="togglePw()">👁</button>
+      </div>
+    </div>
+    <button class="btn-login" onclick="doLogin()">Masuk →</button>
+    <p style="font-size:11px;color:var(--muted);margin-top:14px">Demo: password <strong>admin123</strong></p>
+  </div>
+</div>
+
+<div id="appShell">
+  <header class="app-header">
+    <img src="logo.png" alt="EMC" class="logo-img-sm" onerror="this.style.display='none';document.getElementById('hdrFb').style.display='flex'">
+    <div id="hdrFb" class="logo-fb-sm">棒</div>
+    <div><div class="app-title">Excellent Mandarin</div><div class="app-sub">Panel Admin</div></div>
+    <div class="header-right"><button class="btn-logout" onclick="doLogout()">Keluar</button></div>
+  </header>
+
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="showTab('dashboard',this)">📊 Dashboard</button>
+    <button class="tab-btn" onclick="showTab('laporan',this)">📝 Laporan</button>
+    <button class="tab-btn" onclick="showTab('murid',this)">👨‍🎓 Murid</button>
+    <button class="tab-btn" onclick="showTab('absensi',this)">📋 Absensi</button>
+    <button class="tab-btn" onclick="showTab('invoice',this)">🧾 Invoice</button>
+    <button class="tab-btn" onclick="showTab('reward',this)">⭐ Reward</button>
+    <button class="tab-btn" onclick="showTab('slipgaji',this)">💵 Slip Gaji</button>
+  </div>
+
+  <div class="app-content">
+
+    <!-- DASHBOARD -->
+    <div class="tab-page active" id="tab-dashboard">
+      <div class="grid-4" style="margin-bottom:18px">
+        <div class="stat-card sc-red"><div class="s-icon">👨‍🎓</div><div class="s-val" id="dashTotalMurid">–</div><div class="s-label">Total Murid</div></div>
+        <div class="stat-card sc-teal"><div class="s-icon">✅</div><div class="s-val" id="dashAktifMurid">–</div><div class="s-label">Murid Aktif</div></div>
+        <div class="stat-card sc-green"><div class="s-icon">📚</div><div class="s-val" id="dashSesi">–</div><div class="s-label">Sesi Bln Ini</div></div>
+        <div class="stat-card sc-yellow"><div class="s-icon">💰</div><div class="s-val" id="dashPendapatan">–</div><div class="s-label">Invoice Lunas</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="section-card"><div class="card-head"><h3>🔔 Bukti Pembayaran Masuk</h3></div><div id="paymentNotifs"><span class="spinner"></span></div></div>
+        <div class="section-card"><div class="card-head"><h3>🎁 Request Redeem Reward</h3></div><div id="redeemNotifs"><span class="spinner"></span></div></div>
+      </div>
+      <div class="section-card">
+        <div class="card-head"><h3>⚡ Aksi Cepat</h3></div>
+        <div class="qa-grid">
+          <div class="qa-btn" onclick="showTab('laporan',document.querySelectorAll('.tab-btn')[1])"><span class="qa-icon">➕</span>Tambah Laporan</div>
+          <div class="qa-btn" onclick="showTab('murid',document.querySelectorAll('.tab-btn')[2])"><span class="qa-icon">👨‍🎓</span>Data Murid</div>
+          <div class="qa-btn" onclick="showTab('absensi',document.querySelectorAll('.tab-btn')[3])"><span class="qa-icon">📋</span>Input Absensi</div>
+          <div class="qa-btn" onclick="showTab('invoice',document.querySelectorAll('.tab-btn')[4])"><span class="qa-icon">🧾</span>Buat Invoice</div>
+          <div class="qa-btn" onclick="showTab('reward',document.querySelectorAll('.tab-btn')[5])"><span class="qa-icon">⭐</span>Kelola Reward</div>
+        </div>
+      </div>
+      <div class="section-card">
+        <div class="card-head"><h3>👩‍🏫 Rekap Per Guru / 老师</h3></div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Nama Guru</th><th>Sesi Bln Ini</th><th>Status</th></tr></thead>
+          <tbody id="guruRekapTbody"><tr><td colspan="3" style="text-align:center;padding:16px"><span class="spinner"></span></td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- LAPORAN -->
+    <div class="tab-page" id="tab-laporan">
+      <div class="section-card">
+        <div class="card-head"><h3>📝 Data Laporan Belajar</h3><button class="btn btn-primary" onclick="toggleForm('form-laporan')">➕ Tambah Laporan</button></div>
+        <div class="filter-row">
+          <select id="filterLaporanMurid"><option value="">Semua Murid</option></select>
+          <input type="month" id="filterLaporanBulan">
+          <button class="btn btn-dark" onclick="tabLoaded.laporan=false;loadLaporan()">🔍 Filter</button>
+        </div>
+        <div class="add-form" id="form-laporan">
+          <h4 style="margin-bottom:14px;font-size:14px;font-weight:800">Tambah Laporan Baru</h4>
+          <div class="form-row">
+            <div class="form-field"><label>Murid</label><select id="fLapMurid" class="sel-murid"><option value="">Pilih Murid...</option></select></div>
+            <div class="form-field"><label>Guru / 老师</label><select id="fLapGuru" class="sel-guru"><option value="">Pilih Guru...</option></select></div>
+          </div>
+          <div class="form-row">
+            <div class="form-field"><label>Tanggal</label><input type="date" id="fLapTanggal"></div>
+            <div class="form-field"><label>Program / Materi</label>
+              <select id="fLapSubject">
+                <option>HSK 1</option><option>HSK 2</option><option>HSK 3</option>
+                <option>HSK 4</option><option>HSK 5</option><option>HSK 6</option>
+                <option>Bimbingan Materi Sekolah</option>
+                <option>Business Mandarin</option><option>Conversation</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row" style="grid-template-columns:1fr">
+            <div class="form-field"><label>Materi yang Dipelajari</label><textarea id="fLapAnalisis" placeholder="Kosakata baru, karakter Hanzi, tata bahasa..."></textarea></div>
+          </div>
+          <div class="form-row" style="grid-template-columns:1fr">
+            <div class="form-field"><label>Catatan 老师 Laoshi</label><textarea id="fLapCatatan" placeholder="Catatan untuk orang tua..."></textarea></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="saveLaporan()">💾 Simpan</button>
+            <button class="btn btn-dark" onclick="toggleForm('form-laporan')">Batal</button>
+          </div>
+        </div>
+        <div class="table-wrap" style="margin-top:14px">
+          <table><thead><tr><th>Tanggal</th><th>Murid</th><th>Guru</th><th>Program</th><th>Aksi</th></tr></thead>
+          <tbody id="laporanTbody"><tr><td colspan="5" style="text-align:center;padding:20px"><span class="spinner"></span></td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- MURID -->
+    <div class="tab-page" id="tab-murid">
+      <div class="grid-3" style="margin-bottom:18px">
+        <div class="stat-card sc-red"><div class="s-icon">👥</div><div class="s-val" id="muridTotal">–</div><div class="s-label">Total Murid</div></div>
+        <div class="stat-card sc-green"><div class="s-icon">✅</div><div class="s-val" id="muridAktif">–</div><div class="s-label">Aktif</div></div>
+        <div class="stat-card sc-yellow"><div class="s-icon">⏸</div><div class="s-val" id="muridNonaktif">–</div><div class="s-label">Nonaktif</div></div>
+      </div>
+      <div class="section-card">
+        <div class="card-head"><h3>👨‍🎓 Data Murid</h3><button class="btn btn-primary" onclick="toggleForm('form-murid')">➕ Tambah Murid</button></div>
+        <div class="add-form" id="form-murid">
+          <h4 style="margin-bottom:14px;font-size:14px;font-weight:800">Tambah Murid Baru</h4>
+          <div class="form-row">
+            <div class="form-field"><label>Nama Lengkap</label><input type="text" id="fMNama" placeholder="Nama murid..."></div>
+            <div class="form-field"><label>No. WA Orang Tua</label><input type="tel" id="fMWaOrtu" placeholder="08xxxxxxxxxx"></div>
+          </div>
+          <div class="form-row-3">
+            <div class="form-field"><label>Tipe Program</label>
+              <select id="fMTipe"><option value="Private">Private</option><option value="Semi Private">Semi Private</option><option value="Reguler">Reguler</option></select>
+            </div>
+            <div class="form-field"><label>Mode</label>
+              <select id="fMMode"><option value="Online">Online</option><option value="Onsite">Onsite</option></select>
+            </div>
+            <div class="form-field"><label>Program</label>
+              <select id="fMProgram">
+                <option value="HSK">HSK</option>
+                <option value="Bimbingan Materi Sekolah">Bimbingan Materi Sekolah</option>
+                <option value="Business Mandarin">Business Mandarin</option>
+                <option value="Conversation">Conversation</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-field"><label>Fee per Lesson (Rp)</label><input type="number" id="fMFee" placeholder="150000"></div>
+            <div class="form-field"><label>Tanggal Masuk</label><input type="date" id="fMTglMasuk"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-field"><label>WA untuk Laporan (kosongkan jika sama)</label><input type="tel" id="fMWaLaporan" placeholder="08xxxxxxxxxx"></div>
+            <div class="form-field"><label>Status</label>
+              <select id="fMAktif"><option value="aktif">Aktif</option><option value="nonaktif">Nonaktif</option></select>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="saveMurid()">💾 Simpan</button>
+            <button class="btn btn-dark" onclick="toggleForm('form-murid')">Batal</button>
+          </div>
+        </div>
+        <div class="table-wrap" style="margin-top:14px">
+          <table><thead><tr><th>Nama</th><th>Program</th><th>Fee/Sesi</th><th>WA Ortu</th><th>⭐</th><th>Status</th><th>Aksi</th></tr></thead>
+          <tbody id="muridTbody"><tr><td colspan="7" style="text-align:center;padding:20px"><span class="spinner"></span></td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABSENSI -->
+    <div class="tab-page" id="tab-absensi">
+      <div class="section-card">
+        <div class="card-head"><h3>📋 Input Absensi Harian</h3></div>
+        <div style="margin-bottom:16px"><div class="form-field" style="max-width:220px"><label>Tanggal</label><input type="date" id="absenDate" onchange="loadAbsensiList()"></div></div>
+        <div id="absenList"><div style="color:var(--muted);text-align:center;padding:20px">Pilih tanggal untuk memuat daftar absensi</div></div>
+        <button class="btn btn-primary" style="margin-top:14px" onclick="doSaveAbsensi()">💾 Simpan Absensi</button>
+      </div>
+      <div class="section-card">
+        <div class="card-head"><h3>📊 Rekap Absensi Bulanan</h3></div>
+        <div class="filter-row">
+          <input type="month" id="absenRekap">
+          <button class="btn btn-dark" onclick="loadAbsensiRekap()">🔍 Tampilkan</button>
+        </div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Murid</th><th>Hadir</th><th>Absen</th><th>% Kehadiran</th></tr></thead>
+          <tbody id="absenRekapTbody"><tr><td colspan="4" style="color:var(--muted);text-align:center;padding:16px">Pilih bulan lalu klik Tampilkan</td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- INVOICE -->
+    <div class="tab-page" id="tab-invoice">
+      <div class="grid-2">
+        <div class="section-card">
+          <div class="card-head"><h3>🧾 Generate Invoice</h3></div>
+          <div class="form-field" style="margin-bottom:12px"><label>Murid</label><select id="invMurid" class="sel-murid" onchange="onInvMuridChange()"><option value="">Pilih Murid...</option></select></div>
+          <div class="form-field" style="margin-bottom:12px"><label>Fee per Sesi</label><div class="fee-display" id="invFeeDisplay">– pilih murid dulu –</div></div>
+          <div class="form-row" style="margin-bottom:12px">
+            <div class="form-field"><label>Bulan</label><input type="month" id="invBulan" onchange="updateInvPreview()"></div>
+            <div class="form-field"><label>Jumlah Sesi</label><input type="number" id="invSesi" min="1" placeholder="8" oninput="updateInvPreview()"></div>
+          </div>
+          <div class="form-field" style="margin-bottom:14px"><label>Catatan (opsional)</label><input type="text" id="invCatatan" placeholder="Catatan tambahan..." oninput="updateInvPreview()"></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary" onclick="doGenerateInvoice()">🧾 Generate</button>
+            <button class="btn btn-dark" onclick="generateAllInvoice()">⚡ Semua Aktif</button>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="card-head"><h3>📱 Preview Pesan WhatsApp</h3></div>
+          <div class="wa-preview">
+            <div class="traffic"><div class="dot" style="background:#FF5F57"></div><div class="dot" style="background:#FEBC2E"></div><div class="dot" style="background:#28C840"></div></div>
+            <span id="waInvText">Pilih murid dan bulan untuk preview pesan.</span>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button class="btn btn-teal" onclick="copyInvWA()">📋 Salin Pesan</button>
+            <button class="btn btn-primary" onclick="kirimInvWA()">📱 Kirim WA</button>
+          </div>
+        </div>
+      </div>
+      <div class="section-card">
+        <div class="card-head"><h3>📋 Riwayat Invoice</h3></div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Murid</th><th>Bulan</th><th>Sesi</th><th>Total</th><th>Status</th><th>Bukti</th><th>Aksi</th></tr></thead>
+          <tbody id="invoiceTbody"><tr><td colspan="7" style="text-align:center;padding:20px"><span class="spinner"></span></td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- REWARD -->
+    <div class="tab-page" id="tab-reward">
+      <div class="grid-2">
+        <div class="section-card">
+          <div class="card-head"><h3>🎁 Daftar Reward</h3><button class="btn btn-primary" onclick="toggleForm('form-reward')">➕ Tambah</button></div>
+          <div class="add-form" id="form-reward">
+            <h4 style="margin-bottom:14px;font-size:14px;font-weight:800">Tambah Reward Baru</h4>
+            <div class="form-row">
+              <div class="form-field"><label>Nama Reward</label><input type="text" id="fRNama" placeholder="Nama hadiah..."></div>
+              <div class="form-field"><label>Bintang Dibutuhkan</label><input type="number" id="fRBintang" value="50"></div>
+            </div>
+            <div class="form-row"><div class="form-field"><label>Icon Emoji</label><input type="text" id="fRIcon" value="🎁"></div></div>
+            <div class="form-actions">
+              <button class="btn btn-primary" onclick="saveReward()">💾 Simpan</button>
+              <button class="btn btn-dark" onclick="toggleForm('form-reward')">Batal</button>
+            </div>
+          </div>
+          <div id="rewardList" style="margin-top:14px"><div style="text-align:center;padding:20px"><span class="spinner"></span></div></div>
+        </div>
+        <div class="section-card">
+          <div class="card-head"><h3>⭐ Bintang Semua Murid</h3></div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Murid</th><th>Total ⭐</th><th>Aksi</th></tr></thead>
+            <tbody id="bintangTbody"><tr><td colspan="3" style="text-align:center;padding:20px"><span class="spinner"></span></td></tr></tbody></table>
+          </div>
+        </div>
+      </div>
+      <div class="section-card">
+        <div class="card-head"><h3>🔄 Tukarkan Reward untuk Murid</h3></div>
+        <div class="wizard-steps">
+          <div class="wstep"><div class="wstep-dot active" id="ws1">1</div></div><div class="wstep-line" id="wl1"></div>
+          <div class="wstep"><div class="wstep-dot" id="ws2">2</div></div><div class="wstep-line" id="wl2"></div>
+          <div class="wstep"><div class="wstep-dot" id="ws3">3</div></div>
+        </div>
+        <div id="wiz1"><div class="form-field" style="max-width:300px;margin-bottom:12px"><label>Pilih Murid</label><select id="wizMurid"><option value="">Pilih...</option></select></div><button class="btn btn-primary" onclick="wizNext(1)">Lanjut →</button></div>
+        <div id="wiz2" style="display:none"><p style="font-size:13px;color:var(--muted);margin-bottom:12px">Pilih reward yang ingin ditukarkan:</p><div id="wizRewardList" style="display:flex;flex-direction:column;gap:8px"></div><div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-primary" onclick="wizNext(2)">Konfirmasi →</button><button class="btn btn-dark" onclick="wizBack(2)">← Kembali</button></div></div>
+        <div id="wiz3" style="display:none"><div style="background:#ECFDF5;border:1.5px solid #A7F3D0;border-radius:14px;padding:18px;text-align:center"><div style="font-size:40px;margin-bottom:8px">🎉</div><div style="font-weight:800;font-size:16px;color:var(--green)">Konfirmasi Redeem</div><div style="font-size:13px;color:var(--muted);margin-top:6px" id="wizConfirmText">—</div></div><div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-primary" onclick="wizConfirm()">✓ Konfirmasi Redeem</button><button class="btn btn-dark" onclick="wizBack(3)">← Kembali</button></div></div>
+      </div>
+      <div class="section-card">
+        <div class="card-head"><h3>📜 Riwayat Redeem</h3></div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Murid</th><th>Reward</th><th>Bintang</th><th>Tanggal</th></tr></thead>
+          <tbody id="redeemTbody"><tr><td colspan="4" style="text-align:center;padding:20px"><span class="spinner"></span></td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIP GAJI -->
+    <div class="tab-page" id="tab-slipgaji">
+
+      <!-- MANAGE GURU -->
+      <div class="section-card">
+        <div class="card-head"><h3>👩‍🏫 Data Guru / 老师</h3><button class="btn btn-primary" onclick="toggleForm('form-guru')">➕ Tambah Guru</button></div>
+        <div class="add-form" id="form-guru">
+          <h4 style="margin-bottom:14px;font-size:14px;font-weight:800">Data Guru Baru</h4>
+          <div class="form-row">
+            <div class="form-field"><label>Nama Lengkap</label><input type="text" id="fGNama" placeholder="Nama guru..."></div>
+            <div class="form-field"><label>ID Karyawan</label><input type="text" id="fGID" placeholder="ZX-1001"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-field"><label>No. WA Guru</label><input type="tel" id="fGWA" placeholder="08xxxxxxxxxx"></div>
+            <div class="form-field"><label>Tanggal Bergabung</label><input type="date" id="fGTglGabung"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-field"><label>Honor per Sesi Onsite (Rp)</label><input type="number" id="fGHonorOnsite" placeholder="75000"></div>
+            <div class="form-field"><label>Honor per Sesi Online (Rp)</label><input type="number" id="fGHonorOnline" placeholder="50000"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-field"><label>Jabatan</label><input type="text" id="fGJabatan" value="Teacher"></div>
+            <div class="form-field"><label>Status PTKP</label><select id="fGPTKP"><option>TK0</option><option>TK1</option><option>TK2</option><option>TK3</option><option>K0</option><option>K1</option><option>K2</option></select></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="saveGuru()">💾 Simpan</button>
+            <button class="btn btn-dark" onclick="toggleForm('form-guru')">Batal</button>
+          </div>
+        </div>
+        <div class="table-wrap" style="margin-top:14px">
+          <table><thead><tr><th>Nama</th><th>ID</th><th>Honor Onsite</th><th>Honor Online</th><th>WA</th><th>Bergabung</th><th>Aksi</th></tr></thead>
+          <tbody id="guruTableTbody"><tr><td colspan="7" style="text-align:center;padding:20px"><span class="spinner"></span></td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- GENERATOR -->
+      <div class="grid-2">
+        <div class="section-card">
+          <div class="card-head"><h3>💵 Generate Slip Gaji</h3></div>
+          <div class="form-field" style="margin-bottom:12px"><label>Pilih Guru</label><select id="slipGuruSel" onchange="onSlipGuruChange()"><option value="">Pilih Guru...</option></select></div>
+          <div class="form-field" style="margin-bottom:12px"><label>Periode / Bulan</label><input type="month" id="slipBulan" onchange="onSlipGuruChange()"></div>
+          <button class="btn btn-primary" onclick="generateSlip()" style="width:100%;justify-content:center;padding:12px">💵 Generate Slip Gaji</button>
+        </div>
+        <div class="section-card" id="slipInfoCard">
+          <div class="card-head"><h3>ℹ️ Info Guru</h3></div>
+          <div id="slipGuruInfo" style="font-size:13px;color:var(--muted)">Pilih guru untuk melihat info.</div>
+        </div>
+      </div>
+
+      <!-- SLIP PREVIEW -->
+      <div class="section-card" id="slipPreviewCard" style="display:none">
+        <div class="card-head">
+          <h3>📄 Slip Gaji – Preview</h3>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-teal" onclick="printSlip()">🖨️ Print / Save PDF</button>
+            <button class="btn btn-teal" onclick="copySlipWA()">📋 Salin WA</button>
+            <button class="btn btn-primary" onclick="kirimSlipWA()">📱 Kirim WA</button>
+          </div>
+        </div>
+
+        <!-- Slip visual -->
+        <div class="slip-wrap" id="slipVisual">
+          <div class="slip-header">
+            <div style="display:flex;align-items:center;gap:10px">
+              <img src="logo.png" style="height:72px;object-fit:contain;border-radius:6px;background:var(--yellow);padding:2px" onerror="this.style.display='none'">
+            </div>
+            <div style="text-align:right">
+              <div class="slip-confidential">Pribadi &amp; Rahasia</div>
+              <div style="font-weight:700;font-size:13px;margin-top:10px">Periode : <span id="spPeriode">—</span></div>
+            </div>
+          </div>
+          <div style="padding:0 28px 14px;font-weight:700;font-size:13px">PT GLOBAL SINAR DUNIA – EXCELLENT MANDARIN</div>
+          <div class="slip-title">
+            <div style="font-size:22px;font-weight:900;margin-bottom:6px">Slip Gaji</div>
+            <div style="color:var(--red);font-weight:800;font-size:16px">Take Home Pay <span id="spTHP">Rp 0</span></div>
+          </div>
+          <div class="slip-info">
+            <table>
+              <tr>
+                <td style="color:var(--muted);width:130px">Nama</td><td style="width:8px">:</td><td style="font-weight:700;width:180px" id="spNama">—</td>
+                <td style="color:var(--muted);width:150px">Jabatan</td><td style="width:8px">:</td><td style="font-weight:700" id="spJabatan">Teacher</td>
+              </tr>
+              <tr>
+                <td style="color:var(--muted)">ID Karyawan</td><td>:</td><td style="font-weight:700" id="spID">—</td>
+                <td style="color:var(--muted)">Status Karyawan</td><td>:</td><td style="font-weight:700">Karyawan Freelance Teacher</td>
+              </tr>
+              <tr>
+                <td style="color:var(--muted)">Bagian</td><td>:</td><td style="font-weight:700">1</td>
+                <td style="color:var(--muted)">Status PTKP</td><td>:</td><td style="font-weight:700" id="spPTKP">TK0</td>
+              </tr>
+              <tr>
+                <td style="color:var(--muted)">Golongan</td><td>:</td><td style="font-weight:700">Freelance</td>
+                <td style="color:var(--muted)">Tanggal Bergabung</td><td>:</td><td style="font-weight:700" id="spTglGabung">—</td>
+              </tr>
+            </table>
+          </div>
+          <div class="slip-tables">
+            <table class="slip-table">
+              <thead><tr><th style="background:var(--red);border-radius:6px 0 0 0">Pendapatan</th><th style="background:var(--red);text-align:right;border-radius:0 6px 0 0">Nominal</th></tr></thead>
+              <tbody>
+                <tr><td>Honor Onsite (<span id="spOnsiteSesi">0</span> sesi)</td><td style="text-align:right" id="spOnsiteNom">Rp 0</td></tr>
+                <tr><td>Honor Online (<span id="spOnlineSesi">0</span> sesi)</td><td style="text-align:right" id="spOnlineNom">Rp 0</td></tr>
+              </tbody>
+              <tfoot><tr class="total-row"><td>Pendapatan</td><td style="text-align:right" id="spTotalPend">Rp 0</td></tr></tfoot>
+            </table>
+            <table class="slip-table">
+              <thead><tr><th style="background:var(--muted);border-radius:6px 0 0 0">Potongan</th><th style="background:var(--muted);text-align:right;border-radius:0 6px 0 0">Nominal</th></tr></thead>
+              <tbody>
+                <tr><td style="height:41px"></td><td></td></tr>
+                <tr><td style="height:41px"></td><td></td></tr>
+              </tbody>
+              <tfoot><tr class="total-row"><td>Potongan</td><td style="text-align:right">Rp 0</td></tr></tfoot>
+            </table>
+          </div>
+          <div class="slip-footer">
+            <div style="font-weight:800;font-size:14px">Take Home Pay</div>
+            <div style="display:flex;gap:20px;align-items:center">
+              <span style="font-weight:700">:</span>
+              <span style="font-weight:800;font-size:16px;color:var(--red)" id="spTHPFooter">Rp 0</span>
+            </div>
+          </div>
+        </div><!-- /slip-wrap -->
+
+        <!-- WA Message Preview -->
+        <div style="margin-top:18px">
+          <div style="font-weight:800;font-size:14px;margin-bottom:10px;display:flex;align-items:center;gap:8px">📱 Pesan WhatsApp</div>
+          <div class="wa-preview">
+            <div class="traffic"><div class="dot" style="background:#FF5F57"></div><div class="dot" style="background:#FEBC2E"></div><div class="dot" style="background:#28C840"></div></div>
+            <span id="slipWAText">—</span>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn btn-teal" onclick="copySlipWA()">📋 Salin Pesan</button>
+            <button class="btn btn-primary" onclick="kirimSlipWA()">📱 Kirim WA ke Guru</button>
+          </div>
+        </div>
+      </div><!-- /slipPreviewCard -->
+
+    </div><!-- /tab-slipgaji -->
+
+  </div>
+</div>
+
+<!-- MODAL EDIT MURID -->
+<div class="modal-overlay" id="editMuridModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('editMuridModal')">✕</button>
+    <div class="modal-title">✏️ Edit Data Murid</div>
+    <input type="hidden" id="editMuridId">
+    <div class="form-row">
+      <div class="form-field"><label>Nama</label><input type="text" id="editName"></div>
+      <div class="form-field"><label>WA Ortu</label><input type="tel" id="editWA"></div>
+    </div>
+    <div class="form-row-3">
+      <div class="form-field"><label>Tipe Program</label><select id="editTipe"><option value="Private">Private</option><option value="Semi Private">Semi Private</option><option value="Reguler">Reguler</option></select></div>
+      <div class="form-field"><label>Mode</label><select id="editMode"><option value="Online">Online</option><option value="Onsite">Onsite</option></select></div>
+      <div class="form-field"><label>Program</label><select id="editProgram"><option value="HSK">HSK</option><option value="Bimbingan Materi Sekolah">Bimbingan Materi Sekolah</option><option value="Business Mandarin">Business Mandarin</option><option value="Conversation">Conversation</option></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-field"><label>Fee per Lesson (Rp)</label><input type="number" id="editFee"></div>
+      <div class="form-field"><label>WA Laporan</label><input type="tel" id="editWALaporan"></div>
+    </div>
+    <div class="form-row"><div class="form-field"><label>Status</label><select id="editAktif"><option value="aktif">Aktif</option><option value="nonaktif">Nonaktif</option></select></div></div>
+    <div class="form-actions">
+      <button class="btn btn-primary" onclick="saveEditMurid()">💾 Simpan</button>
+      <button class="btn btn-dark" onclick="closeModal('editMuridModal')">Batal</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast">—</div>
+
+<script>
+let allMurid=[],allGuru=[],tabLoaded={},wizSelectedMurid=null,wizSelectedReward=null,invSelectedMurid=null;
+
+const muridById=id=>allMurid.find(m=>m.id===id)||{};
+const guruById=id=>allGuru.find(g=>g.id===id)||{};
+const fmtRp=n=>'Rp '+Number(n||0).toLocaleString('id-ID');
+const fmtDate=s=>{if(!s)return'–';try{return new Date(s).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});}catch{return s;}};
+const fmtBulan=s=>{if(!s)return'–';try{const[y,m]=s.split('-');return new Date(y,m-1).toLocaleString('id-ID',{month:'long',year:'numeric'});}catch{return s;}};
+const statusBadge=s=>{const mc={lunas:'badge-green',belum_bayar:'badge-red',menunggu:'badge-yellow',aktif:'badge-green',nonaktif:'badge-red'};const lc={lunas:'Lunas',belum_bayar:'Belum Bayar',menunggu:'Menunggu',aktif:'Aktif',nonaktif:'Nonaktif'};return`<span class="badge ${mc[s]||'badge-gray'}">${lc[s]||s}</span>`;};
+const tipeBadge=t=>{const cls=t==='Private'?'prog-private':t==='Semi Private'?'prog-semi':'prog-reguler';return`<span class="prog-tag ${cls}">${t||'–'}</span>`;};
+const modeBadge=m=>{return`<span class="prog-tag ${m==='Online'?'prog-online':'prog-onsite'}">${m||'–'}</span>`;};
+const today=()=>new Date().toISOString().slice(0,10);
+const thisMonth=()=>new Date().toISOString().slice(0,7);
+const esc=s=>(s||'').replace(/'/g,"\\'");
+
+function showToast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='show '+type;setTimeout(()=>t.className='',3000);}
+function toggleForm(id){document.getElementById(id).classList.toggle('open');}
+function togglePw(){const i=document.getElementById('pwInput');i.type=i.type==='password'?'text':'password';}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+function doLogin(){
+  const p=document.getElementById('pwInput').value;
+  if(p==='admin123'){document.getElementById('loginScreen').style.display='none';document.getElementById('appShell').style.display='flex';initApp();}
+  else{const e=document.getElementById('loginErr');e.style.display='block';setTimeout(()=>e.style.display='none',3000);}
+}
+function doLogout(){document.getElementById('appShell').style.display='none';document.getElementById('loginScreen').style.display='flex';document.getElementById('pwInput').value='';tabLoaded={};allMurid=[];allGuru=[];}
+
+async function initApp(){
+  try{
+    [allMurid,allGuru]=await Promise.all([API.getMurid(),API.getGuru()]);
+    populateSelects();
+    document.getElementById('fLapTanggal').value=today();
+    document.getElementById('absenDate').value=today();
+    document.getElementById('invBulan').value=thisMonth();
+    document.getElementById('absenRekap').value=thisMonth();
+    document.getElementById('filterLaporanBulan').value=thisMonth();
+    document.getElementById('fMTglMasuk').value=today();
+    await loadDashboard();
+  }catch(e){showToast('Gagal memuat data: '+e.message,'error');}
+}
+
+function populateSelects(){
+  document.getElementById('filterLaporanMurid').innerHTML='<option value="">Semua Murid</option>'+allMurid.map(m=>`<option value="${m.id}">${m.nama}</option>`).join('');
+  const po='<option value="">Pilih Murid...</option>'+allMurid.map(m=>`<option value="${m.id}">${m.nama}</option>`).join('');
+  document.querySelectorAll('.sel-murid').forEach(s=>s.innerHTML=po);
+  const go='<option value="">Pilih Guru...</option>'+allGuru.map(g=>`<option value="${g.id}">${g.nama}</option>`).join('');
+  document.querySelectorAll('.sel-guru').forEach(s=>s.innerHTML=go);
+  populateWizMurid();
+}
+
+function showTab(name,btn){
+  document.querySelectorAll('.tab-page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(!tabLoaded[name]){tabLoaded[name]=true;
+    if(name==='laporan')loadLaporan();
+    else if(name==='murid')renderMuridTable();
+    else if(name==='absensi')loadAbsensiList();
+    else if(name==='invoice')loadInvoice();
+    else if(name==='reward')loadReward();
+    else if(name==='slipgaji')loadSlipGaji();
+  }
+}
+
+async function loadDashboard(){
+  const aktif=allMurid.filter(m=>m.aktif==='aktif');
+  document.getElementById('dashTotalMurid').textContent=allMurid.length;
+  document.getElementById('dashAktifMurid').textContent=aktif.length;
+  try{
+    const bln=thisMonth();
+    const[laporan,invData,redData]=await Promise.all([API.getLaporan({bulan:bln}),API.getInvoice(),API.getRedeem()]);
+    const laps=Array.isArray(laporan)?laporan:[];
+    const invs=Array.isArray(invData)?invData:[];
+    const reds=Array.isArray(redData)?redData:[];
+    document.getElementById('dashSesi').textContent=laps.length;
+    const pdp=invs.filter(i=>i.bulan===bln&&i.status==='lunas').reduce((s,i)=>s+Number(i.nominal||0),0);
+    document.getElementById('dashPendapatan').textContent=pdp>=1000000?'Rp '+(pdp/1e6).toFixed(1)+'jt':fmtRp(pdp);
+    renderPendingPayments(invs.filter(i=>i.status==='menunggu'));
+    renderPendingRedeems(reds.filter(r=>r.status==='pending'));
+    renderGuruRekap(laps);
+  }catch(e){['dashSesi','dashPendapatan'].forEach(id=>document.getElementById(id).textContent='–');document.getElementById('paymentNotifs').innerHTML='<div style="color:var(--muted);font-size:13px">Gagal memuat</div>';document.getElementById('redeemNotifs').innerHTML='<div style="color:var(--muted);font-size:13px">Gagal memuat</div>';document.getElementById('guruRekapTbody').innerHTML='<tr><td colspan="3" style="color:var(--muted);text-align:center">Gagal memuat</td></tr>';}
+}
+
+function renderPendingPayments(pending){
+  const el=document.getElementById('paymentNotifs');
+  if(!pending.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;padding:10px 0">Tidak ada pembayaran menunggu 🎉</div>';return;}
+  el.innerHTML=pending.map((inv,i)=>{const m=muridById(inv.murid_id);return`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;${i<pending.length-1?'border-bottom:1px solid var(--border)':''}"><div><div style="font-weight:700;font-size:13px">${m.nama||inv.murid_id}</div><div style="font-size:12px;color:var(--muted)">${fmtBulan(inv.bulan)} · ${fmtRp(inv.nominal)}</div></div><div style="display:flex;gap:6px"><button class="btn btn-green btn-sm" onclick="confirmPayment('${inv.id}',this)">✓</button><button class="btn btn-danger btn-sm" onclick="rejectPayment('${inv.id}',this)">✕</button></div></div>`;}).join('');
+}
+
+function renderPendingRedeems(pending){
+  const el=document.getElementById('redeemNotifs');
+  if(!pending.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;padding:10px 0">Tidak ada request redeem 🎉</div>';return;}
+  el.innerHTML=pending.map((r,i)=>{const m=muridById(r.murid_id);return`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;${i<pending.length-1?'border-bottom:1px solid var(--border)':''}"><div><div style="font-weight:700;font-size:13px">${m.nama||r.murid_id}</div><div style="font-size:12px;color:var(--muted)">${r.nama_reward} (${r.bintang_digunakan} ⭐)</div></div><div style="display:flex;gap:6px"><button class="btn btn-primary btn-sm" onclick="confirmRedeem('${r.id}',this)">✓</button><button class="btn btn-danger btn-sm" onclick="rejectRedeem('${r.id}',this)">✕</button></div></div>`;}).join('');
+}
+
+function renderGuruRekap(laporan){
+  const byGuru={};laporan.forEach(l=>{if(!byGuru[l.guru_id])byGuru[l.guru_id]=0;byGuru[l.guru_id]++;});
+  const tbody=document.getElementById('guruRekapTbody');
+  if(!allGuru.length){tbody.innerHTML='<tr><td colspan="3" style="color:var(--muted);text-align:center">Belum ada data guru</td></tr>';return;}
+  tbody.innerHTML=allGuru.map(g=>`<tr><td><b>${g.nama}</b></td><td>${byGuru[g.id]||0} sesi</td><td><span class="badge badge-green">Aktif</span></td></tr>`).join('');
+}
+
+async function confirmPayment(id,btn){try{await API.updateInvoiceStatus(id,'lunas',today());showToast('Pembayaran dikonfirmasi!','success');btn.closest('div').innerHTML='<span class="badge badge-green">Lunas ✓</span>';tabLoaded.invoice=false;}catch(e){showToast('Gagal','error');}}
+async function rejectPayment(id,btn){try{await API.updateInvoiceStatus(id,'belum_bayar','');showToast('Ditolak','');btn.closest('div[style*="flex"]').parentElement.remove();}catch(e){showToast('Gagal','error');}}
+async function confirmRedeem(id,btn){try{await API.updateRedeemStatus(id,'selesai');showToast('Redeem dikonfirmasi! 🎉','success');btn.closest('div').innerHTML='<span class="badge badge-green">Selesai ✓</span>';}catch(e){showToast('Gagal','error');}}
+async function rejectRedeem(id,btn){try{await API.updateRedeemStatus(id,'ditolak');showToast('Ditolak','');btn.closest('div[style*="flex"]').parentElement.remove();}catch(e){showToast('Gagal','error');}}
+
+async function loadLaporan(){
+  const tbody=document.getElementById('laporanTbody');
+  tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px"><span class="spinner"></span></td></tr>';
+  try{
+    const opts={};
+    const mid=document.getElementById('filterLaporanMurid').value;
+    const bln=document.getElementById('filterLaporanBulan').value;
+    if(mid)opts.murid_id=mid;if(bln)opts.bulan=bln;
+    const arr=Array.isArray(await API.getLaporan(opts))?await API.getLaporan(opts):[];
+    if(!arr.length){tbody.innerHTML='<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:20px">Belum ada laporan</td></tr>';return;}
+    tbody.innerHTML=arr.sort((a,b)=>b.tanggal>a.tanggal?1:-1).map(l=>{const m=muridById(l.murid_id),g=guruById(l.guru_id);return`<tr><td>${fmtDate(l.tanggal)}</td><td><b>${m.nama||l.murid_id}</b></td><td>${g.nama||l.guru_id||'–'}</td><td>${l.subject||'–'}</td><td><button class="btn btn-danger btn-sm" onclick="deleteLaporan('${l.id}',this)">🗑</button></td></tr>`;}).join('');
+  }catch(e){document.getElementById('laporanTbody').innerHTML=`<tr><td colspan="5" style="color:var(--red-err);text-align:center">Gagal: ${e.message}</td></tr>`;}
+}
+
+async function saveLaporan(){
+  const murid_id=document.getElementById('fLapMurid').value,guru_id=document.getElementById('fLapGuru').value,tanggal=document.getElementById('fLapTanggal').value;
+  if(!murid_id||!guru_id||!tanggal){showToast('Lengkapi data dulu!','error');return;}
+  try{await API.addLaporan({murid_id,guru_id,tanggal,subject:document.getElementById('fLapSubject').value,analisis:document.getElementById('fLapAnalisis').value,catatan:document.getElementById('fLapCatatan').value});showToast('Laporan disimpan! ⭐+1','success');toggleForm('form-laporan');document.getElementById('fLapAnalisis').value='';document.getElementById('fLapCatatan').value='';tabLoaded.laporan=false;loadLaporan();}
+  catch(e){showToast('Gagal: '+e.message,'error');}
+}
+async function deleteLaporan(id,btn){if(!confirm('Hapus laporan ini?'))return;try{await API.deleteLaporan(id);btn.closest('tr').remove();showToast('Dihapus','');}catch(e){showToast('Gagal','error');}}
+
+function renderMuridTable(){
+  const total=allMurid.length,aktifC=allMurid.filter(m=>m.aktif==='aktif').length;
+  document.getElementById('muridTotal').textContent=total;
+  document.getElementById('muridAktif').textContent=aktifC;
+  document.getElementById('muridNonaktif').textContent=total-aktifC;
+  const tbody=document.getElementById('muridTbody');
+  if(!total){tbody.innerHTML='<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:20px">Belum ada murid</td></tr>';return;}
+  tbody.innerHTML=allMurid.map(m=>`<tr>
+    <td><b>${m.nama}</b>${m.link_id?`<div style="font-size:11px;margin-top:2px"><a href="ortu.html?id=${m.link_id}" target="_blank" style="color:var(--teal);font-weight:700">🔗 Link Ortu</a></div>`:''}</td>
+    <td>${tipeBadge(m.tipe_program)}${modeBadge(m.mode)}<div style="font-size:11px;color:var(--muted);margin-top:3px">${m.program||'–'}</div></td>
+    <td>${fmtRp(m.fee_per_lesson||m.fee)}<span style="font-size:10px;color:var(--muted)">/sesi</span></td>
+    <td>${m.wa_ortu||'–'}</td>
+    <td><span class="star-count">⭐ ${m.bintang||0}</span></td>
+    <td>${statusBadge(m.aktif||'nonaktif')}</td>
+    <td><div style="display:flex;gap:6px"><button class="btn btn-teal btn-sm" onclick="openEditMurid('${m.id}')">✏️</button><button class="btn btn-danger btn-sm" onclick="doDeleteMurid('${m.id}','${esc(m.nama)}')">🗑</button></div></td>
+  </tr>`).join('');
+}
+
+async function saveMurid(){
+  const nama=document.getElementById('fMNama').value.trim();
+  if(!nama){showToast('Nama wajib diisi!','error');return;}
+  try{
+    await API.addMurid({nama,tipe_program:document.getElementById('fMTipe').value,mode:document.getElementById('fMMode').value,program:document.getElementById('fMProgram').value,fee_per_lesson:Number(document.getElementById('fMFee').value)||0,wa_ortu:document.getElementById('fMWaOrtu').value.trim(),wa_laporan:document.getElementById('fMWaLaporan').value.trim(),tgl_masuk:document.getElementById('fMTglMasuk').value,aktif:document.getElementById('fMAktif').value});
+    showToast('Murid ditambahkan!','success');toggleForm('form-murid');['fMNama','fMWaOrtu','fMWaLaporan','fMFee'].forEach(id=>document.getElementById(id).value='');
+    allMurid=await API.getMurid();populateSelects();renderMuridTable();
+  }catch(e){showToast('Gagal: '+e.message,'error');}
+}
+
+function openEditMurid(id){
+  const m=allMurid.find(x=>x.id===id);if(!m)return;
+  document.getElementById('editMuridId').value=m.id;document.getElementById('editName').value=m.nama||'';
+  document.getElementById('editFee').value=m.fee_per_lesson||m.fee||'';document.getElementById('editWA').value=m.wa_ortu||'';
+  document.getElementById('editWALaporan').value=m.wa_laporan||'';document.getElementById('editTipe').value=m.tipe_program||'Private';
+  document.getElementById('editMode').value=m.mode||'Online';document.getElementById('editProgram').value=m.program||'HSK';
+  document.getElementById('editAktif').value=m.aktif||'aktif';document.getElementById('editMuridModal').classList.add('open');
+}
+
+async function saveEditMurid(){
+  const id=document.getElementById('editMuridId').value,nama=document.getElementById('editName').value.trim();
+  if(!id||!nama){showToast('Data tidak valid!','error');return;}
+  try{
+    await API.updateMurid({id,nama,tipe_program:document.getElementById('editTipe').value,mode:document.getElementById('editMode').value,program:document.getElementById('editProgram').value,fee_per_lesson:Number(document.getElementById('editFee').value)||0,wa_ortu:document.getElementById('editWA').value.trim(),wa_laporan:document.getElementById('editWALaporan').value.trim(),aktif:document.getElementById('editAktif').value});
+    showToast('Data diperbarui!','success');closeModal('editMuridModal');allMurid=await API.getMurid();populateSelects();renderMuridTable();
+  }catch(e){showToast('Gagal: '+e.message,'error');}
+}
+
+async function doDeleteMurid(id,nama){if(!confirm(`Hapus murid "${nama}"?`))return;try{await API.deleteMurid(id);showToast('Murid dihapus','');allMurid=await API.getMurid();populateSelects();renderMuridTable();}catch(e){showToast('Gagal','error');}}
+
+async function loadAbsensiList(){
+  const tanggal=document.getElementById('absenDate').value;if(!tanggal)return;
+  const el=document.getElementById('absenList');
+  el.innerHTML='<div style="text-align:center;padding:20px"><span class="spinner"></span></div>';
+  const aktifMurid=allMurid.filter(m=>m.aktif==='aktif');
+  if(!aktifMurid.length){el.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px">Tidak ada murid aktif</div>';return;}
+  let existMap={};
+  try{const ex=await API.getAbsensi({tanggal});(Array.isArray(ex)?ex:[]).forEach(a=>existMap[a.murid_id]=a.status);}catch(e){}
+  el.innerHTML=aktifMurid.map(m=>{const st=existMap[m.id]||'hadir';return`<div class="absensi-row" data-murid-id="${m.id}"><div style="font-weight:700;font-size:14px">${m.nama}</div><div class="toggle-group"><button class="toggle-btn ${st==='hadir'?'hadir':''}" onclick="setAbsen(this,'hadir')">✓ Hadir</button><button class="toggle-btn ${st==='absen'?'absen':''}" onclick="setAbsen(this,'absen')">✕ Absen</button></div></div>`;}).join('');
+}
+
+function setAbsen(btn,type){const grp=btn.closest('.toggle-group');grp.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('hadir','absen'));btn.classList.add(type);}
+
+async function doSaveAbsensi(){
+  const tanggal=document.getElementById('absenDate').value;if(!tanggal){showToast('Pilih tanggal!','error');return;}
+  const rows=document.querySelectorAll('#absenList .absensi-row');if(!rows.length){showToast('Tidak ada murid','error');return;}
+  const data=[];rows.forEach(r=>{const grp=r.querySelector('.toggle-group');const hd=grp.querySelector('.toggle-btn.hadir');data.push({murid_id:r.dataset.muridId,status:hd?'hadir':'absen'});});
+  try{await API.saveAbsensi(tanggal,data);showToast('Absensi disimpan!','success');}catch(e){showToast('Gagal: '+e.message,'error');}
+}
+
+async function loadAbsensiRekap(){
+  const bulan=document.getElementById('absenRekap').value;if(!bulan)return;
+  const tbody=document.getElementById('absenRekapTbody');tbody.innerHTML='<tr><td colspan="4" style="text-align:center"><span class="spinner"></span></td></tr>';
+  try{
+    const arr=Array.isArray(await API.getAbsensi({bulan}))?await API.getAbsensi({bulan}):[];
+    const map={};arr.forEach(a=>{if(!map[a.murid_id])map[a.murid_id]={hadir:0,absen:0};map[a.murid_id][a.status]=(map[a.murid_id][a.status]||0)+1;});
+    tbody.innerHTML=allMurid.filter(m=>m.aktif==='aktif').map(m=>{const d=map[m.id]||{hadir:0,absen:0};const total=d.hadir+d.absen;const pct=total?Math.round(d.hadir/total*100):0;return`<tr><td><b>${m.nama}</b></td><td>${d.hadir}</td><td>${d.absen}</td><td><span style="color:${pct>=80?'var(--green)':pct>=60?'var(--teal)':'var(--red-err)'};font-weight:800">${pct}%</span></td></tr>`;}).join('');
+  }catch(e){tbody.innerHTML='<tr><td colspan="4" style="color:var(--red-err);text-align:center">Gagal memuat</td></tr>';}
+}
+
+async function loadInvoice(){
+  const tbody=document.getElementById('invoiceTbody');tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px"><span class="spinner"></span></td></tr>';
+  try{
+    const arr=Array.isArray(await API.getInvoice())?await API.getInvoice():[];
+    if(!arr.length){tbody.innerHTML='<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:20px">Belum ada invoice</td></tr>';return;}
+    tbody.innerHTML=arr.sort((a,b)=>b.bulan>a.bulan?1:-1).map(inv=>{
+      const m=muridById(inv.murid_id);
+      const bukti=inv.bukti_url?`<img src="${inv.bukti_url}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;cursor:pointer" onclick="window.open('${inv.bukti_url}','_blank')">`:'<span style="color:var(--muted);font-size:12px">–</span>';
+      return`<tr><td><b>${m.nama||inv.murid_id}</b></td><td>${fmtBulan(inv.bulan)}</td><td>${inv.sesi||'–'}</td><td>${fmtRp(inv.nominal)}</td><td>${statusBadge(inv.status||'belum_bayar')}</td><td>${bukti}</td><td><div style="display:flex;gap:4px">${inv.status==='menunggu'?`<button class="btn btn-green btn-sm" onclick="confirmPayment('${inv.id}',this)">✓</button>`:''}<button class="btn btn-danger btn-sm" onclick="deleteInv('${inv.id}',this)">🗑</button></div></td></tr>`;
+    }).join('');
+  }catch(e){document.getElementById('invoiceTbody').innerHTML='<tr><td colspan="7" style="color:var(--red-err);text-align:center">Gagal</td></tr>';}
+}
+
+function onInvMuridChange(){
+  const id=document.getElementById('invMurid').value;
+  invSelectedMurid=allMurid.find(m=>m.id===id)||null;
+  const fee=invSelectedMurid?(invSelectedMurid.fee_per_lesson||invSelectedMurid.fee||0):0;
+  document.getElementById('invFeeDisplay').textContent=fee?fmtRp(fee)+' / sesi':'– pilih murid dulu –';
+  updateInvPreview();
+}
+
+function updateInvPreview(){
+  const m=invSelectedMurid;
+  const bulan=document.getElementById('invBulan').value;
+  const sesi=Number(document.getElementById('invSesi').value)||0;
+  const catatan=document.getElementById('invCatatan').value;
+  const fee=m?(m.fee_per_lesson||m.fee||0):0;
+  const total=fee*sesi;
+  document.getElementById('waInvText').textContent=
+`你好 mum / dads / kakak 👋🏻
+
+Tagihan Belajar – Excellent Mandarin
+Murid  : ${m?m.nama:'–'}
+Bulan  : ${fmtBulan(bulan)}
+Sesi   : ${sesi} sesi × ${fmtRp(fee)}
+Total  : ${fmtRp(total)}${catatan?'\n\nCatatan: '+catatan:''}
+
+谢谢 – Excellent Mandarin 🎋`;
+}
+
+async function doGenerateInvoice(){
+  const murid_id=document.getElementById('invMurid').value,bulan=document.getElementById('invBulan').value;
+  if(!murid_id||!bulan){showToast('Pilih murid dan bulan!','error');return;}
+  try{await API.generateInvoice(murid_id,bulan,document.getElementById('invCatatan').value);showToast('Invoice dibuat!','success');tabLoaded.invoice=false;loadInvoice();}
+  catch(e){showToast('Gagal: '+e.message,'error');}
+}
+
+async function generateAllInvoice(){
+  const bulan=document.getElementById('invBulan').value;if(!bulan){showToast('Pilih bulan!','error');return;}
+  if(!confirm(`Generate invoice semua murid aktif – ${fmtBulan(bulan)}?`))return;
+  const aktif=allMurid.filter(m=>m.aktif==='aktif');let ok=0,err=0;
+  for(const m of aktif){try{await API.generateInvoice(m.id,bulan,'');ok++;}catch(e){err++;}}
+  showToast(`Selesai: ${ok} berhasil${err?' | '+err+' gagal':''}`,ok&&!err?'success':'');tabLoaded.invoice=false;loadInvoice();
+}
+
+function copyInvWA(){navigator.clipboard.writeText(document.getElementById('waInvText').textContent);showToast('Pesan disalin!','success');}
+
+function kirimInvWA(){
+  const wa=((invSelectedMurid?.wa_laporan||invSelectedMurid?.wa_ortu)||'').replace(/\D/g,'');
+  if(!wa){showToast('No. WA tidak ditemukan!','error');return;}
+  const num=wa.startsWith('0')?'62'+wa.slice(1):'62'+wa;
+  window.open('https://wa.me/'+num+'?text='+encodeURIComponent(document.getElementById('waInvText').textContent),'_blank');
+}
+
+async function deleteInv(id,btn){if(!confirm('Hapus invoice ini?'))return;try{await API.deleteInvoice(id);btn.closest('tr').remove();showToast('Dihapus','');}catch(e){showToast('Gagal','error');}}
+
+async function loadReward(){
+  try{
+    const[rewards,redeems]=await Promise.all([API.getReward(),API.getRedeem()]);
+    renderRewardList(Array.isArray(rewards)?rewards:[]);renderBintangTable();
+    renderRedeemTable(Array.isArray(redeems)?redeems:[]);populateWizMurid();
+  }catch(e){showToast('Gagal memuat reward','error');}
+}
+
+function renderRewardList(rewards){
+  const el=document.getElementById('rewardList');
+  if(!rewards.length){el.innerHTML='<div style="color:var(--muted);text-align:center;padding:16px">Belum ada reward</div>';return;}
+  el.innerHTML=rewards.map(r=>`<div class="reward-item"><div class="reward-icon-box">${r.icon||'🎁'}</div><div style="flex:1"><div style="font-weight:700;font-size:14px">${r.nama}</div><div style="font-size:12px;color:var(--muted)">⭐ ${r.bintang} bintang</div></div><button class="btn btn-danger btn-sm" onclick="deleteReward('${r.id}',this)">🗑</button></div>`).join('');
+}
+
+function renderBintangTable(){
+  const tbody=document.getElementById('bintangTbody');
+  if(!allMurid.length){tbody.innerHTML='<tr><td colspan="3" style="color:var(--muted);text-align:center">Belum ada murid</td></tr>';return;}
+  tbody.innerHTML=allMurid.map(m=>`<tr><td><b>${m.nama}</b></td><td><span class="star-count">⭐ ${m.bintang||0}</span></td><td><button class="btn btn-yellow btn-sm" onclick="addBintang('${m.id}')">+⭐</button></td></tr>`).join('');
+}
+
+function renderRedeemTable(redeems){
+  const tbody=document.getElementById('redeemTbody');
+  if(!redeems.length){tbody.innerHTML='<tr><td colspan="4" style="color:var(--muted);text-align:center;padding:16px">Belum ada riwayat</td></tr>';return;}
+  tbody.innerHTML=redeems.map(r=>{const m=muridById(r.murid_id);return`<tr><td><b>${m.nama||r.murid_id}</b></td><td>${r.nama_reward||'–'}</td><td>⭐ ${r.bintang_digunakan}</td><td>${fmtDate(r.tanggal)}</td></tr>`;}).join('');
+}
+
+async function saveReward(){
+  const nama=document.getElementById('fRNama').value.trim();if(!nama){showToast('Nama wajib diisi!','error');return;}
+  try{await API.addReward({nama,bintang:Number(document.getElementById('fRBintang').value)||50,icon:document.getElementById('fRIcon').value||'🎁'});showToast('Reward ditambahkan!','success');toggleForm('form-reward');document.getElementById('fRNama').value='';tabLoaded.reward=false;loadReward();}
+  catch(e){showToast('Gagal','error');}
+}
+async function deleteReward(id,btn){if(!confirm('Hapus reward?'))return;try{await API.deleteReward(id);btn.closest('.reward-item').remove();showToast('Dihapus','');}catch(e){showToast('Gagal','error');}}
+
+async function addBintang(murid_id){
+  const n=prompt('Tambah berapa bintang?','1');if(!n||isNaN(n))return;
+  try{await API.updateBintang(murid_id,{delta:Number(n)});showToast(`+${n} bintang!`,'success');allMurid=await API.getMurid();renderBintangTable();}
+  catch(e){showToast('Gagal','error');}
+}
+
+function populateWizMurid(){const s=document.getElementById('wizMurid');if(!s)return;s.innerHTML='<option value="">Pilih...</option>'+allMurid.map(m=>`<option value="${m.id}">${m.nama} (⭐${m.bintang||0})</option>`).join('');}
+
+async function wizNext(step){
+  if(step===1){
+    const id=document.getElementById('wizMurid').value;if(!id){showToast('Pilih murid!','error');return;}
+    wizSelectedMurid=allMurid.find(m=>m.id===id);
+    document.getElementById('ws1').className='wstep-dot done';document.getElementById('ws1').textContent='✓';document.getElementById('wl1').className='wstep-line done';document.getElementById('ws2').className='wstep-dot active';
+    document.getElementById('wiz1').style.display='none';document.getElementById('wiz2').style.display='block';
+    try{
+      const rewards=await API.getReward();
+      document.getElementById('wizRewardList').innerHTML=(Array.isArray(rewards)?rewards:[]).map(r=>{
+        const ok=(wizSelectedMurid.bintang||0)>=r.bintang;
+        return`<div class="reward-item" style="${ok?'cursor:pointer':'opacity:.5'}" onclick="${ok?`selectWizReward('${r.id}','${esc(r.nama)}',${r.bintang},'${r.icon||'🎁'}',this)`:''}" ><div class="reward-icon-box">${r.icon||'🎁'}</div><div style="flex:1"><div style="font-weight:700;font-size:14px">${r.nama}</div><div style="font-size:12px;color:var(--muted)">⭐ ${r.bintang}${ok?'':' (tidak cukup)'}</div></div></div>`;
+      }).join('');
+    }catch(e){showToast('Gagal memuat reward','error');}
+  } else if(step===2){
+    if(!wizSelectedReward){showToast('Pilih reward!','error');return;}
+    document.getElementById('ws2').className='wstep-dot done';document.getElementById('ws2').textContent='✓';document.getElementById('wl2').className='wstep-line done';document.getElementById('ws3').className='wstep-dot active';
+    document.getElementById('wiz2').style.display='none';document.getElementById('wiz3').style.display='block';
+    document.getElementById('wizConfirmText').textContent=`${wizSelectedMurid.nama} → "${wizSelectedReward.nama}" (⭐ ${wizSelectedReward.bintang})`;
+  }
+}
+
+function selectWizReward(id,nama,bintang,icon,el){
+  wizSelectedReward={id,nama,bintang,icon};
+  document.querySelectorAll('#wizRewardList .reward-item').forEach(e=>e.style.outline='');
+  el.style.outline='2px solid var(--red)';el.style.borderRadius='12px';
+}
+
+function wizBack(step){
+  if(step===2){document.getElementById('wiz2').style.display='none';document.getElementById('wiz1').style.display='block';document.getElementById('ws2').className='wstep-dot';document.getElementById('wl1').className='wstep-line';}
+  else if(step===3){document.getElementById('wiz3').style.display='none';document.getElementById('wiz2').style.display='block';document.getElementById('ws3').className='wstep-dot';document.getElementById('wl2').className='wstep-line';}
+  wizSelectedReward=null;
+}
+
+async function wizConfirm(){
+  if(!wizSelectedMurid||!wizSelectedReward){showToast('Data tidak lengkap','error');return;}
+  try{
+    await API.saveRedeem({murid_id:wizSelectedMurid.id,reward_id:wizSelectedReward.id,nama_reward:wizSelectedReward.nama,bintang_digunakan:wizSelectedReward.bintang});
+    showToast('Redeem berhasil! 🎉','success');
+    ['ws1','ws2','ws3'].forEach((id,i)=>{const e=document.getElementById(id);e.className='wstep-dot'+(i===0?' active':'');e.textContent=i+1;});
+    ['wl1','wl2'].forEach(id=>document.getElementById(id).className='wstep-line');
+    document.getElementById('wiz3').style.display='none';document.getElementById('wiz1').style.display='block';
+    wizSelectedMurid=null;wizSelectedReward=null;document.getElementById('wizMurid').value='';
+    allMurid=await API.getMurid();populateWizMurid();renderBintangTable();tabLoaded.reward=false;loadReward();
+  }catch(e){showToast('Gagal: '+e.message,'error');}
+}
+
+// ══════════════════════════════════════════
+//  SLIP GAJI GURU
+// ══════════════════════════════════════════
+let slipGuruList = [], slipCurrentGuru = null, slipData = null;
+
+async function loadSlipGaji() {
+  try {
+    slipGuruList = await API.getGuru();
+    renderGuruTable();
+    populateSlipGuruSelect();
+    document.getElementById('slipBulan').value = thisMonth();
+  } catch(e) { showToast('Gagal memuat data guru: '+e.message,'error'); }
+}
+
+// ── Guru Table ──────────────────────────────
+function renderGuruTable() {
+  const tbody = document.getElementById('guruTableTbody');
+  if (!slipGuruList.length) {
+    tbody.innerHTML='<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:20px">Belum ada data guru</td></tr>';
+    return;
+  }
+  tbody.innerHTML = slipGuruList.map(g => `<tr>
+    <td><b>${g.nama}</b></td>
+    <td>${g.id_karyawan||'–'}</td>
+    <td>${fmtRp(g.honor_onsite||0)}<span style="font-size:10px;color:var(--muted)">/sesi</span></td>
+    <td>${fmtRp(g.honor_online||0)}<span style="font-size:10px;color:var(--muted)">/sesi</span></td>
+    <td>${g.wa||'–'}</td>
+    <td>${g.tgl_bergabung||'–'}</td>
+    <td><div style="display:flex;gap:6px">
+      <button class="btn btn-teal btn-sm" onclick="openEditGuru('${g.id}')">✏️</button>
+      <button class="btn btn-danger btn-sm" onclick="doDeleteGuru('${g.id}','${esc(g.nama)}')">🗑</button>
+    </div></td>
+  </tr>`).join('');
+}
+
+function populateSlipGuruSelect() {
+  const sel = document.getElementById('slipGuruSel');
+  sel.innerHTML = '<option value="">Pilih Guru...</option>' +
+    slipGuruList.map(g => `<option value="${g.id}">${g.nama}</option>`).join('');
+}
+
+// ── Add / Edit Guru ─────────────────────────
+async function saveGuru() {
+  const nama = document.getElementById('fGNama').value.trim();
+  if (!nama) { showToast('Nama wajib diisi!','error'); return; }
+  try {
+    await API.addGuru({
+      nama,
+      id_karyawan:   document.getElementById('fGID').value.trim(),
+      jabatan:       document.getElementById('fGJabatan').value.trim() || 'Teacher',
+      status_ptkp:   document.getElementById('fGPTKP').value,
+      tgl_bergabung: document.getElementById('fGTglGabung').value,
+      honor_onsite:  Number(document.getElementById('fGHonorOnsite').value) || 0,
+      honor_online:  Number(document.getElementById('fGHonorOnline').value) || 0,
+      wa:            document.getElementById('fGWA').value.trim(),
+    });
+    showToast('Guru ditambahkan!','success');
+    toggleForm('form-guru');
+    ['fGNama','fGID','fGWA','fGHonorOnsite','fGHonorOnline'].forEach(id => document.getElementById(id).value='');
+    slipGuruList = await API.getGuru();
+    allGuru = slipGuruList;
+    renderGuruTable();
+    populateSlipGuruSelect();
+    populateSelects();
+  } catch(e) { showToast('Gagal: '+e.message,'error'); }
+}
+
+function openEditGuru(id) {
+  const g = slipGuruList.find(x => x.id===id); if(!g) return;
+  const name = prompt('Nama:', g.nama); if(!name) return;
+  const honorO = prompt('Honor Onsite/sesi:', g.honor_onsite||0);
+  const honorOL = prompt('Honor Online/sesi:', g.honor_online||0);
+  const wa = prompt('No. WA:', g.wa||'');
+  API.updateGuru({id, nama:name, honor_onsite:Number(honorO)||0, honor_online:Number(honorOL)||0, wa})
+    .then(async () => { showToast('Diperbarui!','success'); slipGuruList=await API.getGuru(); allGuru=slipGuruList; renderGuruTable(); populateSlipGuruSelect(); populateSelects(); })
+    .catch(e => showToast('Gagal: '+e.message,'error'));
+}
+
+async function doDeleteGuru(id, nama) {
+  if(!confirm(`Hapus guru "${nama}"?`)) return;
+  try {
+    await API.deleteGuru(id);
+    showToast('Guru dihapus','');
+    slipGuruList = await API.getGuru(); allGuru = slipGuruList;
+    renderGuruTable(); populateSlipGuruSelect(); populateSelects();
+  } catch(e) { showToast('Gagal','error'); }
+}
+
+// ── Slip Generator ──────────────────────────
+function onSlipGuruChange() {
+  const id = document.getElementById('slipGuruSel').value;
+  slipCurrentGuru = slipGuruList.find(g => g.id===id) || null;
+  const info = document.getElementById('slipGuruInfo');
+  if (!slipCurrentGuru) { info.innerHTML='<span style="color:var(--muted)">Pilih guru untuk melihat info.</span>'; return; }
+  const g = slipCurrentGuru;
+  info.innerHTML=`
+    <div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
+      <div><b>${g.nama}</b> &nbsp;<span style="color:var(--muted)">${g.id_karyawan||'–'}</span></div>
+      <div>Honor Onsite: <b style="color:var(--red)">${fmtRp(g.honor_onsite||0)}/sesi</b></div>
+      <div>Honor Online: <b style="color:var(--teal)">${fmtRp(g.honor_online||0)}/sesi</b></div>
+      <div>WA: ${g.wa||'–'}</div>
+      <div>Bergabung: ${g.tgl_bergabung||'–'}</div>
+    </div>`;
+}
+
+async function generateSlip() {
+  const g = slipCurrentGuru;
+  const bulan = document.getElementById('slipBulan').value;
+  if (!g) { showToast('Pilih guru dulu!','error'); return; }
+  if (!bulan) { showToast('Pilih bulan dulu!','error'); return; }
+
+  showToast('Menghitung sesi...','');
+  try {
+    // Pull all laporan for this guru this month
+    const laporan = await API.getLaporan({ bulan });
+    const myLaporan = (Array.isArray(laporan)?laporan:[]).filter(l => l.guru_id === g.id);
+
+    // Count onsite vs online by looking up each student's mode
+    let onsiteCount = 0, onlineCount = 0;
+    myLaporan.forEach(l => {
+      const m = allMurid.find(x => x.id === l.murid_id) || {};
+      if ((m.mode||'').toLowerCase() === 'onsite') onsiteCount++;
+      else onlineCount++;
+    });
+
+    const honorOnsite = Number(g.honor_onsite) || 0;
+    const honorOnline = Number(g.honor_online) || 0;
+    const totalOnsite = onsiteCount * honorOnsite;
+    const totalOnline = onlineCount * honorOnline;
+    const total = totalOnsite + totalOnline;
+
+    // Build periode string
+    const [y, m] = bulan.split('-');
+    const lastDay = new Date(y, m, 0).getDate();
+    const bulanStr = new Date(y, m-1).toLocaleString('id-ID', {month:'long', year:'numeric'});
+    const periodeStr = `1 ${new Date(y,m-1).toLocaleString('id-ID',{month:'short'})} ${y} – ${lastDay} ${new Date(y,m-1).toLocaleString('id-ID',{month:'short'})} ${y}`;
+
+    slipData = { g, bulan, onsiteCount, onlineCount, totalOnsite, totalOnline, total, periodeStr, bulanStr, y, m, lastDay };
+
+    // Fill slip visual
+    document.getElementById('spPeriode').textContent    = periodeStr;
+    document.getElementById('spNama').textContent       = g.nama;
+    document.getElementById('spJabatan').textContent    = g.jabatan || 'Teacher';
+    document.getElementById('spID').textContent         = g.id_karyawan || '–';
+    document.getElementById('spPTKP').textContent       = g.status_ptkp || 'TK0';
+    document.getElementById('spTglGabung').textContent  = g.tgl_bergabung || '–';
+    document.getElementById('spOnsiteSesi').textContent = onsiteCount;
+    document.getElementById('spOnlineSesi').textContent = onlineCount;
+    document.getElementById('spOnsiteNom').textContent  = fmtRp(totalOnsite);
+    document.getElementById('spOnlineNom').textContent  = fmtRp(totalOnline);
+    document.getElementById('spTotalPend').textContent  = fmtRp(total);
+    document.getElementById('spTHP').textContent        = fmtRp(total);
+    document.getElementById('spTHPFooter').textContent  = fmtRp(total);
+
+    // Fill WA message
+    document.getElementById('slipWAText').textContent = buildSlipWAText();
+
+    document.getElementById('slipPreviewCard').style.display = 'block';
+    document.getElementById('slipPreviewCard').scrollIntoView({ behavior:'smooth', block:'start' });
+    showToast('Slip berhasil di-generate! ✅','success');
+  } catch(e) { showToast('Gagal: '+e.message,'error'); }
+}
+
+function buildSlipWAText() {
+  if (!slipData) return '—';
+  const { g, periodeStr, onsiteCount, onlineCount, totalOnsite, totalOnline, total } = slipData;
+  const honorO = Number(g.honor_onsite)||0, honorOL = Number(g.honor_online)||0;
+  return `*Slip Gaji – Excellent Mandarin Course*
+Periode: ${periodeStr}
+
+Nama    : ${g.nama}
+ID      : ${g.id_karyawan||'–'}
+Status  : Karyawan Freelance Teacher
+
+*Pendapatan:*
+Honor Onsite (${onsiteCount} sesi × ${fmtRp(honorO)}) : *${fmtRp(totalOnsite)}*
+Honor Online (${onlineCount} sesi × ${fmtRp(honorOL)}) : *${fmtRp(totalOnline)}*
+
+*Take Home Pay : ${fmtRp(total)}*
+
+PT Global Sinar Dunia – Excellent Mandarin Course
+谢谢 🎋`;
+}
+
+function copySlipWA() {
+  navigator.clipboard.writeText(buildSlipWAText());
+  showToast('Pesan disalin! 📋','success');
+}
+
+function kirimSlipWA() {
+  const wa = (slipCurrentGuru?.wa||'').replace(/\D/g,'');
+  if (!wa) { showToast('No. WA guru tidak tersedia!','error'); return; }
+  const num = wa.startsWith('0') ? '62'+wa.slice(1) : '62'+wa;
+  window.open('https://wa.me/'+num+'?text='+encodeURIComponent(buildSlipWAText()),'_blank');
+}
+
+function printSlip() {
+  // Open a new print window with just the slip
+  const slip = document.getElementById('slipVisual');
+  const g = slipCurrentGuru;
+  const bulan = document.getElementById('slipBulan').value || '';
+  const win = window.open('','_blank','width=900,height=700');
+  win.document.write(`<!DOCTYPE html><html><head>
+    <meta charset="UTF-8">
+    <title>Slip Gaji – ${g?.nama||''} – ${bulan}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:'Nunito',sans-serif;background:#fff;padding:32px}
+      @page{margin:16mm}
+      @media print{body{padding:0}}
+      .slip-wrap{border:1.5px solid #E8D8C8;border-radius:16px;overflow:hidden;max-width:720px;margin:0 auto}
+      .slip-header{padding:22px 28px;display:flex;justify-content:space-between;align-items:flex-start}
+      .slip-confidential{background:#E8476A;color:#fff;padding:6px 16px;border-radius:8px;font-weight:700;font-size:12px;display:inline-block}
+      .slip-tables{padding:0 28px 20px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+      .slip-table{width:100%;border-collapse:collapse;font-size:13px}
+      .slip-table th{padding:10px 12px;text-align:left;color:#fff;font-weight:700}
+      .slip-table td{padding:10px 12px;border-bottom:1px solid #E8D8C8}
+      .total-row td{font-weight:800;background:#FFF4DC}
+      .slip-footer{padding:14px 28px;border-top:2px solid #E8D8C8;display:flex;justify-content:space-between;align-items:center}
+    </style>
+  </head><body>
+    ${slip.outerHTML}
+    <script>window.onload=()=>window.print()<\/script>
+  </body></html>`);
+  win.document.close();
+}
+</script>
+</body>
+</html>

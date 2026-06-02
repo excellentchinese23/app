@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portal Orang Tua – Excellent Mandarin Course</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Fredoka+One&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#FFF9E6;--red:#C8281E;--red2:#A01E15;--red-bg:#FFF0EF;
+  --yellow:#F5C842;--dark:#2A1515;
+  --green:#059669;--teal:#0D9488;--purple:#7C3AED;
+  --muted:#7C6060;--border:#E8D8C8;--white:#FFFFFF;--bg:#FFF4DC;
+  --red-err:#EF4444;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--dark);min-height:100vh;padding-bottom:72px}
+
+#loadingScreen{position:fixed;inset:0;background:linear-gradient(135deg,var(--dark),#3A1A1A);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.spinner{width:44px;height:44px;border:4px solid rgba(200,40,30,.3);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loadingScreen p{color:#fff;font-weight:700;font-size:15px}
+
+#errorScreen{display:none;position:fixed;inset:0;background:var(--bg);z-index:998;align-items:center;justify-content:center;padding:32px;text-align:center;flex-direction:column;gap:12px}
+#errorScreen.show{display:flex}
+
+.app-header{background:var(--dark);height:56px;display:flex;align-items:center;padding:0 16px;gap:10px;position:sticky;top:0;z-index:100}
+.logo-img-sm{width:34px;height:34px;border-radius:9px;object-fit:contain;background:var(--yellow);padding:2px;flex-shrink:0}
+.logo-fb-sm{width:34px;height:34px;background:var(--yellow);border-radius:9px;display:none;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--dark);flex-shrink:0}
+.app-title{font-family:'Fredoka One',cursive;font-size:17px;color:#fff}
+.app-sub{font-size:10px;color:#C8A8A8;margin-top:-2px}
+
+.hero-banner{background:linear-gradient(135deg,var(--dark) 0%,#3A1A1A 100%);padding:24px 16px;text-align:center;position:relative;overflow:hidden}
+.hero-banner::before{content:'加油';position:absolute;font-size:100px;font-weight:900;color:rgba(245,200,66,.06);bottom:-10px;right:-10px;pointer-events:none}
+.student-avatar{width:72px;height:72px;background:var(--red);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',cursive;font-size:32px;color:#fff;margin:0 auto 12px;border:3px solid rgba(245,200,66,.4)}
+.student-name{font-family:'Fredoka One',cursive;font-size:24px;color:#fff;margin-bottom:4px}
+.student-sub{font-size:12px;color:#C8A8A8;margin-bottom:10px}
+.hero-chips{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+.hero-chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:999px;padding:5px 12px;font-size:12px;font-weight:700;color:#D6C8C8}
+.hero-chip-yellow{background:rgba(245,200,66,.18);border-color:rgba(245,200,66,.4);color:var(--yellow)}
+
+.content{padding:16px;max-width:600px;margin:0 auto}
+
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--dark);border-top:1px solid #3A1A1A;display:flex;z-index:100}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px;cursor:pointer;transition:all .2s;border:none;background:none;color:#C8A8A8;gap:3px}
+.nav-item.active{color:var(--yellow)}
+.nav-icon{font-size:20px;line-height:1}
+.nav-label{font-size:10px;font-weight:700}
+
+.tab-page{display:none}.tab-page.active{display:block}
+
+.section-card{background:var(--white);border-radius:18px;padding:18px;margin-bottom:14px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+.card-title{font-weight:800;font-size:15px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.stat-card{border-radius:14px;padding:14px;text-align:center}
+.sc-red{background:var(--red-bg)}.sc-teal{background:#F0FDFA}.sc-green{background:#ECFDF5}
+.sc-gold{background:linear-gradient(135deg,#FFFBEB,#FEF3C7);border:2px solid #FCD34D}
+.stat-val{font-family:'Fredoka One',cursive;font-size:28px;line-height:1}
+.stat-label{font-size:11px;font-weight:700;color:var(--muted);margin-top:3px}
+.val-red{color:var(--red2)}.val-teal{color:var(--teal)}.val-green{color:var(--green)}.val-gold{color:#92400E}
+
+.feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.feature-card{background:var(--bg);border:1.5px solid var(--border);border-radius:14px;padding:14px;cursor:pointer;transition:all .2s;text-align:center}
+.feature-card:hover{border-color:var(--red);background:var(--red-bg);transform:translateY(-2px)}
+.feat-icon{font-size:26px;margin-bottom:6px}
+.feat-title{font-weight:800;font-size:13px}
+.feat-desc{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4}
+
+/* LAPORAN */
+.report-card{border:1.5px solid var(--border);border-radius:14px;margin-bottom:10px;overflow:hidden}
+.report-card.latest{border-color:var(--red)}
+.report-card.latest .rc-head{background:var(--red-bg)}
+.rc-head{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;background:var(--white)}
+.rc-head:hover{background:#FFFAEC}
+.rc-meta{flex:1}
+.rc-date{font-weight:800;font-size:13px}
+.rc-subject{font-size:12px;color:var(--muted);margin-top:1px}
+.rc-chips{display:flex;gap:6px;align-items:center;margin-top:4px}
+.badge-new{background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;text-transform:uppercase}
+.rc-chevron{font-size:14px;color:var(--muted);transition:transform .3s;flex-shrink:0}
+.rc-chevron.open{transform:rotate(180deg)}
+.rc-body{display:none;padding:12px 14px;border-top:1px solid var(--border)}
+.rc-body.open{display:block}
+
+.materi-box{background:var(--bg);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.6;margin-bottom:8px}
+.box-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.catatan-box{background:var(--red-bg);border-left:3px solid var(--red);border-radius:0 10px 10px 0;padding:10px 12px;font-size:13px;line-height:1.6}
+.catatan-box .box-title{color:var(--red2)}
+
+/* BINTANG */
+.star-summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px}
+.reward-progress{background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.reward-icon-box{width:42px;height:42px;background:#FFFBEB;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.reward-icon-box.unlocked{background:linear-gradient(135deg,var(--yellow),#E8B820);box-shadow:0 2px 8px rgba(245,200,66,.4)}
+.rp-info{flex:1}
+.rp-name{font-weight:700;font-size:13px}
+.rp-stars{font-size:12px;color:var(--muted);margin-bottom:4px}
+.progress-bar{height:6px;background:var(--border);border-radius:999px;overflow:hidden}
+.progress-fill{height:100%;background:var(--yellow);border-radius:999px}
+
+/* INVOICE */
+.invoice-card{border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;background:var(--white);display:flex;align-items:center;gap:12px}
+.inv-info{flex:1}
+.inv-month{font-weight:800;font-size:14px}
+.inv-amount{font-size:13px;color:var(--muted);margin-top:2px}
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;text-transform:uppercase}
+.badge-green{background:#ECFDF5;color:var(--green)}
+.badge-yellow{background:#FFFBEB;color:#92400E}
+.badge-red{background:#FFF1F2;color:var(--red-err)}
+
+.upload-area{border:2px dashed var(--border);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;position:relative;background:var(--white);margin-top:10px}
+.upload-area:hover{border-color:var(--red);background:var(--red-bg)}
+.upload-area input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.upload-preview{max-width:100%;border-radius:10px;margin-top:10px;max-height:160px;object-fit:cover;display:none}
+
+.empty-state{text-align:center;padding:24px;color:var(--muted);font-size:13px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:11px 20px;border-radius:11px;font-size:14px;font-weight:800;border:none;cursor:pointer;transition:all .2s}
+.btn-primary{background:var(--red);color:#fff}.btn-primary:hover{background:var(--red2)}
+.btn-full{width:100%;justify-content:center;padding:13px}
+
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(40px);background:var(--dark);color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;font-weight:700;z-index:9999;transition:all .3s;white-space:nowrap;opacity:0}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+#toast.success{background:var(--green)}
+#toast.error{background:var(--red-err)}
+</style>
+</head>
+<body>
+
+<div id="loadingScreen">
+  <div style="font-size:48px;margin-bottom:4px">🎋</div>
+  <div class="spinner"></div>
+  <p id="loadingMsg">Memuat data murid...</p>
+</div>
+
+<div id="errorScreen">
+  <div style="font-size:56px">😕</div>
+  <div style="font-family:'Fredoka One',cursive;font-size:22px">Murid Tidak Ditemukan</div>
+  <p style="color:var(--muted);font-size:14px;max-width:280px;line-height:1.6" id="errorMsg">Link tidak valid. Hubungi admin untuk mendapatkan link yang benar.</p>
+  <a href="index.html" style="margin-top:8px;color:var(--red);font-weight:700;font-size:14px">← Kembali ke Beranda</a>
+</div>
+
+<header class="app-header">
+  <img src="logo.png" alt="EMC" class="logo-img-sm" onerror="this.style.display='none';document.getElementById('hdrFb').style.display='flex'">
+  <div id="hdrFb" class="logo-fb-sm">棒</div>
+  <div><div class="app-title">Excellent Mandarin</div><div class="app-sub">Portal Orang Tua / 家长</div></div>
+</header>
+
+<div class="hero-banner">
+  <div class="student-avatar" id="avatarInitial">?</div>
+  <div class="student-name" id="studentName">—</div>
+  <div class="student-sub" id="studentSub">Excellent Mandarin Course</div>
+  <div class="hero-chips">
+    <span class="hero-chip" id="heroDate">📅 —</span>
+    <span class="hero-chip hero-chip-yellow" id="heroBintang">⭐ — Bintang</span>
+    <span class="hero-chip" id="heroProgram">🎓 —</span>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- HOME -->
+  <div class="tab-page active" id="tab-home">
+    <div class="stat-grid">
+      <div class="stat-card sc-red"><div class="stat-val val-red" id="statSesi">—</div><div class="stat-label">Total Sesi</div></div>
+      <div class="stat-card sc-teal"><div class="stat-val val-teal" id="statProgram">—</div><div class="stat-label">Program</div></div>
+    </div>
+    <div class="section-card">
+      <div class="card-title">🚀 Menu Utama</div>
+      <div class="feature-grid">
+        <div class="feature-card" onclick="switchTab('laporan')"><div class="feat-icon">📝</div><div class="feat-title">Laporan Belajar</div><div class="feat-desc">Lihat laporan sesi terbaru dari 老师</div></div>
+        <div class="feature-card" onclick="switchTab('bintang')"><div class="feat-icon">⭐</div><div class="feat-title">Bintang &amp; Reward</div><div class="feat-desc">Pantau poin dan hadiah</div></div>
+        <div class="feature-card" onclick="switchTab('tagihan')" style="grid-column:span 2"><div class="feat-icon">🧾</div><div class="feat-title">Tagihan</div><div class="feat-desc">Cek dan upload bukti pembayaran</div></div>
+      </div>
+    </div>
+    <div class="section-card" style="background:linear-gradient(135deg,#2A1515,#3A1A1A);border:none">
+      <div style="text-align:center;padding:8px 0">
+        <div style="font-size:32px;margin-bottom:6px">你好！</div>
+        <div style="font-family:'Fredoka One',cursive;font-size:16px;color:var(--yellow)">Excellent Mandarin Course</div>
+        <div style="font-size:12px;color:#C8A8A8;margin-top:4px">加油！💪 Semangat belajar Bahasa Mandarin!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LAPORAN -->
+  <div class="tab-page" id="tab-laporan">
+    <div class="section-card" style="padding:14px 14px 4px">
+      <div class="card-title">📝 Laporan Belajar</div>
+      <div id="laporanList"><div class="empty-state">⏳ Memuat laporan...</div></div>
+    </div>
+  </div>
+
+  <!-- BINTANG -->
+  <div class="tab-page" id="tab-bintang">
+    <div class="stat-grid" style="grid-template-columns:1fr">
+      <div class="stat-card sc-gold" style="padding:20px">
+        <div style="font-size:32px">⭐</div>
+        <div class="stat-val val-gold" style="font-size:44px" id="bintangTotal">—</div>
+        <div class="stat-label">Total Bintang</div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="card-title">🎁 Progress Menuju Reward</div>
+      <div id="rewardList"><div class="empty-state">⏳ Memuat reward...</div></div>
+      <p style="font-size:12px;color:var(--muted);margin-top:12px;text-align:center">Hubungi admin untuk menukarkan reward ✨<br>谢谢 – Excellent Mandarin</p>
+    </div>
+  </div>
+
+  <!-- TAGIHAN -->
+  <div class="tab-page" id="tab-tagihan">
+    <div class="section-card">
+      <div class="card-title">🧾 Riwayat Tagihan</div>
+      <div id="invoiceList"><div class="empty-state">⏳ Memuat tagihan...</div></div>
+    </div>
+    <div class="section-card" id="uploadCard" style="display:none">
+      <div class="card-title">📎 Upload Bukti Pembayaran</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:8px" id="uploadDesc">Upload struk transfer untuk tagihan terbaru:</p>
+      <div class="upload-area">
+        <input type="file" accept="image/*" id="proofFile" onchange="previewProof(this)">
+        <div id="uploadLabel">
+          <div style="font-size:28px;margin-bottom:8px">📁</div>
+          <div style="font-weight:700;font-size:13px">Klik atau drag gambar di sini</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">JPG, PNG, max 5MB</div>
+        </div>
+        <img id="proofPreview" class="upload-preview">
+      </div>
+      <button class="btn btn-primary btn-full" style="margin-top:12px" id="uploadBtn" onclick="uploadProof()">📤 Upload Bukti Pembayaran</button>
+    </div>
+  </div>
+
+</div>
+
+<nav class="bottom-nav">
+  <button class="nav-item active" id="nav-home"    onclick="switchTab('home')">   <span class="nav-icon">🏠</span><span class="nav-label">Beranda</span></button>
+  <button class="nav-item"        id="nav-laporan" onclick="switchTab('laporan')"><span class="nav-icon">📝</span><span class="nav-label">Laporan</span></button>
+  <button class="nav-item"        id="nav-bintang" onclick="switchTab('bintang')"><span class="nav-icon">⭐</span><span class="nav-label">Bintang</span></button>
+  <button class="nav-item"        id="nav-tagihan" onclick="switchTab('tagihan')"><span class="nav-icon">🧾</span><span class="nav-label">Tagihan</span></button>
+</nav>
+
+<div id="toast">—</div>
+
+<script src="api.js"></script>
+<script>
+let muridData = {}, laporanData = [], invoiceData = [], rewardData = [], bintangVal = 0;
+let pendingInvoiceId = null;
+
+window.addEventListener('DOMContentLoaded', async () => {
+  const link_id = new URLSearchParams(location.search).get('id');
+  if (!link_id) return showError('URL tidak valid. Tidak ada ID murid.');
+
+  document.getElementById('heroDate').textContent =
+    '📅 ' + new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
+
+  try {
+    document.getElementById('loadingMsg').textContent = 'Mencari data murid...';
+    muridData = await API.getMuridByLink(link_id);
+
+    const initial = muridData.nama?.charAt(0).toUpperCase() || '?';
+    document.getElementById('avatarInitial').textContent = initial;
+    document.getElementById('studentName').textContent   = muridData.nama || '—';
+
+    // Show program info in hero
+    const progInfo = [muridData.tipe_program, muridData.mode, muridData.program].filter(Boolean).join(' · ');
+    document.getElementById('studentSub').textContent  = progInfo || 'Excellent Mandarin Course';
+    document.getElementById('heroBintang').textContent = '⭐ ' + (muridData.bintang || 0) + ' Bintang';
+    document.getElementById('heroProgram').textContent = '🎓 ' + (muridData.program || 'Mandarin');
+    bintangVal = Number(muridData.bintang) || 0;
+
+    // Stat cards
+    document.getElementById('statProgram').textContent = muridData.program || '–';
+
+    document.getElementById('loadingMsg').textContent = 'Memuat laporan & tagihan...';
+    [laporanData, invoiceData, rewardData] = await Promise.all([
+      API.getLaporan({ murid_id: muridData.id }),
+      API.getInvoice({ murid_id: muridData.id }),
+      API.getReward(),
+    ]);
+    laporanData = Array.isArray(laporanData) ? laporanData : [];
+    invoiceData = Array.isArray(invoiceData) ? invoiceData : [];
+    rewardData  = Array.isArray(rewardData)  ? rewardData  : [];
+
+    document.getElementById('statSesi').textContent = laporanData.length;
+
+    renderLaporan();
+    renderInvoice();
+    renderReward();
+
+    document.getElementById('loadingScreen').style.display = 'none';
+  } catch(e) {
+    showError(e.message);
+  }
+});
+
+function showError(msg) {
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('errorMsg').textContent = msg;
+  document.getElementById('errorScreen').classList.add('show');
+}
+
+function isNew(tgl) { return (new Date() - new Date(tgl)) < 7 * 86400000; }
+
+function fmtDate(s) {
+  if (!s) return '–';
+  try { return new Date(s).toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); } catch { return s; }
+}
+
+// ── LAPORAN ──────────────────────────────────────────────────
+function renderLaporan() {
+  const sorted = [...laporanData].sort((a,b) => b.tanggal > a.tanggal ? 1 : -1);
+  if (!sorted.length) {
+    document.getElementById('laporanList').innerHTML = '<div class="empty-state">📭 Belum ada laporan</div>';
+    return;
+  }
+  document.getElementById('laporanList').innerHTML = sorted.map((r, i) => `
+    <div class="report-card ${i===0?'latest':''}">
+      <div class="rc-head" onclick="toggleReport(this)">
+        <div style="font-size:20px">${i===0?'🔴':'⚪'}</div>
+        <div class="rc-meta">
+          <div class="rc-date">${fmtDate(r.tanggal)}</div>
+          <div class="rc-subject">${r.subject || '–'}</div>
+          <div class="rc-chips">
+            ${isNew(r.tanggal) ? '<span class="badge-new">Terbaru</span>' : ''}
+          </div>
+        </div>
+        <div class="rc-chevron ${i===0?'open':''}">▼</div>
+      </div>
+      <div class="rc-body ${i===0?'open':''}">
+        <div class="materi-box">
+          <div class="box-title">📖 Materi yang Dipelajari</div>
+          ${r.analisis || '—'}
+        </div>
+        <div class="catatan-box">
+          <div class="box-title">📌 Catatan 老师 Laoshi</div>
+          ${r.catatan || '—'}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+// ── BINTANG & REWARD ─────────────────────────────────────────
+function renderReward() {
+  document.getElementById('bintangTotal').textContent = bintangVal;
+  document.getElementById('heroBintang').textContent  = '⭐ ' + bintangVal + ' Bintang';
+
+  if (!rewardData.length) {
+    document.getElementById('rewardList').innerHTML = '<div class="empty-state">Belum ada reward</div>';
+    return;
+  }
+  document.getElementById('rewardList').innerHTML = rewardData.map(r => {
+    const needed   = Number(r.bintang);
+    const pct      = Math.min(100, Math.round(bintangVal / needed * 100));
+    const unlocked = bintangVal >= needed;
+    return `
+    <div class="reward-progress">
+      <div class="reward-icon-box ${unlocked?'unlocked':''}">${r.icon || '🎁'}</div>
+      <div class="rp-info">
+        <div class="rp-name">${r.nama}</div>
+        <div class="rp-stars">${unlocked ? '✅ Sudah bisa ditukar!' : bintangVal+'/'+needed+' bintang · Kurang '+(needed-bintangVal)+' lagi'}</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${unlocked?'var(--green)':'var(--yellow)'}"></div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── INVOICE ──────────────────────────────────────────────────
+function fmtRupiah(n) { return 'Rp ' + Number(n||0).toLocaleString('id-ID'); }
+function fmtBulan(s) {
+  if (!s) return '—';
+  try { const [y,m]=s.split('-'); return new Date(y,m-1).toLocaleString('id-ID',{month:'long',year:'numeric'}); } catch { return s; }
+}
+function badgeCls(s) { return s==='lunas'?'badge-green':s==='menunggu'?'badge-yellow':'badge-red'; }
+function badgeLbl(s) { return s==='lunas'?'Lunas':s==='menunggu'?'Menunggu Konfirmasi':'Belum Bayar'; }
+
+function renderInvoice() {
+  const sorted = [...invoiceData].sort((a,b) => b.bulan > a.bulan ? 1 : -1);
+  if (!sorted.length) {
+    document.getElementById('invoiceList').innerHTML = '<div class="empty-state">📭 Belum ada tagihan</div>';
+    return;
+  }
+  document.getElementById('invoiceList').innerHTML = sorted.map(inv => `
+    <div class="invoice-card">
+      <div style="font-size:24px">🧾</div>
+      <div class="inv-info">
+        <div class="inv-month">${fmtBulan(inv.bulan)}</div>
+        <div class="inv-amount">${inv.sesi?inv.sesi+' sesi · ':''} ${fmtRupiah(inv.nominal)}</div>
+      </div>
+      <span class="badge ${badgeCls(inv.status)}">${badgeLbl(inv.status)}</span>
+    </div>`).join('');
+
+  const unpaid = sorted.find(i => i.status === 'belum_bayar');
+  if (unpaid) {
+    pendingInvoiceId = unpaid.id;
+    document.getElementById('uploadCard').style.display = 'block';
+    document.getElementById('uploadDesc').textContent =
+      `Upload struk transfer untuk tagihan ${fmtBulan(unpaid.bulan)} (${fmtRupiah(unpaid.nominal)}):`;
+  }
+}
+
+// ── UPLOAD ───────────────────────────────────────────────────
+function previewProof(input) {
+  if (input.files && input.files[0]) {
+    const r = new FileReader();
+    r.onload = e => {
+      const img = document.getElementById('proofPreview');
+      img.src = e.target.result; img.style.display = 'block';
+      document.getElementById('uploadLabel').style.display = 'none';
+    };
+    r.readAsDataURL(input.files[0]);
+  }
+}
+
+async function uploadProof() {
+  const file = document.getElementById('proofFile').files[0];
+  if (!file)             { showToast('Pilih file terlebih dahulu!', 'error'); return; }
+  if (!pendingInvoiceId) { showToast('Tidak ada tagihan yang perlu dibayar', 'error'); return; }
+
+  const btn = document.getElementById('uploadBtn');
+  btn.textContent = '⏳ Mengunggah...'; btn.disabled = true;
+
+  try {
+    const inv = invoiceData.find(i => i.id === pendingInvoiceId);
+    await API.uploadBukti(pendingInvoiceId, muridData.id, inv?.bulan, file);
+    showToast('Bukti berhasil dikirim! Menunggu konfirmasi admin ✅', 'success');
+    btn.textContent = '✅ Terkirim';
+    invoiceData = await API.getInvoice({ murid_id: muridData.id });
+    invoiceData = Array.isArray(invoiceData) ? invoiceData : [];
+    renderInvoice();
+  } catch(e) {
+    showToast('Gagal upload: ' + e.message, 'error');
+    btn.textContent = '📤 Upload Bukti Pembayaran'; btn.disabled = false;
+  }
+}
+
+// ── UI ───────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function toggleReport(head) {
+  head.nextElementSibling.classList.toggle('open');
+  head.querySelector('.rc-chevron').classList.toggle('open');
+}
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'show '+(type||'');
+  setTimeout(() => t.className = '', 3500);
+}
+</script>
+</body>
+</html>
