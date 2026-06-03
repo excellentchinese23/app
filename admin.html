@@ -183,7 +183,7 @@ tr:hover td{background:#FFFAEC}
       </div>
     </div>
     <button class="btn-login" onclick="doLogin()">Masuk →</button>
-    <p style="font-size:11px;color:var(--muted);margin-top:14px">Demo: password <strong>admin123</strong></p>
+    <p style="font-size:11px;color:var(--muted);margin-top:14px">Demo: password <strong>mandarin123</strong></p>
   </div>
 </div>
 
@@ -259,7 +259,7 @@ tr:hover td{background:#FFFAEC}
                 <option>HSK 1</option><option>HSK 2</option><option>HSK 3</option>
                 <option>HSK 4</option><option>HSK 5</option><option>HSK 6</option>
                 <option>Bimbingan Materi Sekolah</option>
-                <option>Business Mandarin</option><option>Conversation</option>
+                <option>Business Mandarin</option><option>Conversation</option><option>Mandarin Taiwan</option>
               </select>
             </div>
           </div>
@@ -299,7 +299,7 @@ tr:hover td{background:#FFFAEC}
           <div class="form-row-3">
             <div class="form-field"><label>Tipe Program</label><select id="fMTipe"><option value="Private">Private</option><option value="Semi Private">Semi Private</option><option value="Reguler">Reguler</option></select></div>
             <div class="form-field"><label>Mode</label><select id="fMMode"><option value="Online">Online</option><option value="Onsite">Onsite</option></select></div>
-            <div class="form-field"><label>Program</label><select id="fMProgram"><option value="HSK">HSK</option><option value="Bimbingan Materi Sekolah">Bimbingan Materi Sekolah</option><option value="Business Mandarin">Business Mandarin</option><option value="Conversation">Conversation</option></select></div>
+            <div class="form-field"><label>Program</label><select id="fMProgram"><option value="HSK">HSK</option><option value="Bimbingan Materi Sekolah">Bimbingan Materi Sekolah</option><option value="Business Mandarin">Business Mandarin</option><option value="Conversation">Conversation</option><option value="Mandarin Taiwan">Mandarin Taiwan</option></select></div>
           </div>
           <div class="form-row">
             <div class="form-field"><label>Fee per Lesson (Rp)</label><input type="number" id="fMFee" placeholder="150000"></div>
@@ -504,7 +504,7 @@ tr:hover td{background:#FFFAEC}
     <div class="form-row-3">
       <div class="form-field"><label>Tipe Program</label><select id="editTipe"><option value="Private">Private</option><option value="Semi Private">Semi Private</option><option value="Reguler">Reguler</option></select></div>
       <div class="form-field"><label>Mode</label><select id="editMode"><option value="Online">Online</option><option value="Onsite">Onsite</option></select></div>
-      <div class="form-field"><label>Program</label><select id="editProgram"><option value="HSK">HSK</option><option value="Bimbingan Materi Sekolah">Bimbingan Materi Sekolah</option><option value="Business Mandarin">Business Mandarin</option><option value="Conversation">Conversation</option></select></div>
+      <div class="form-field"><label>Program</label><select id="editProgram"><option value="HSK">HSK</option><option value="Bimbingan Materi Sekolah">Bimbingan Materi Sekolah</option><option value="Business Mandarin">Business Mandarin</option><option value="Conversation">Conversation</option><option value="Mandarin Taiwan">Mandarin Taiwan</option></select></div>
     </div>
     <div class="form-row">
       <div class="form-field"><label>Fee per Lesson (Rp)</label><input type="number" id="editFee"></div>
@@ -547,7 +547,7 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 
 function doLogin(){
   const p=document.getElementById('pwInput').value;
-  if(p==='admin123'){document.getElementById('loginScreen').style.display='none';document.getElementById('appShell').style.display='flex';initApp();}
+  if(p==='mandarin123'){document.getElementById('loginScreen').style.display='none';document.getElementById('appShell').style.display='flex';initApp();}
   else{const e=document.getElementById('loginErr');e.style.display='block';setTimeout(()=>e.style.display='none',3000);}
 }
 function doLogout(){document.getElementById('appShell').style.display='none';document.getElementById('loginScreen').style.display='flex';document.getElementById('pwInput').value='';tabLoaded={};allMurid=[];allGuru=[];}
