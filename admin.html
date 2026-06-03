@@ -328,9 +328,24 @@ tr:hover td{background:#FFFAEC}
     <div class="tab-page" id="tab-absensi">
       <div class="section-card">
         <div class="card-head"><h3>📋 Input Absensi Harian</h3></div>
-        <div style="margin-bottom:16px"><div class="form-field" style="max-width:220px"><label>Tanggal</label><input type="date" id="absenDate" onchange="loadAbsensiList()"></div></div>
-        <div id="absenList"><div style="color:var(--muted);text-align:center;padding:20px">Pilih tanggal untuk memuat daftar absensi</div></div>
-        <button class="btn btn-primary" style="margin-top:14px" onclick="doSaveAbsensi()">💾 Simpan Absensi</button>
+        <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap">
+          <div class="form-field" style="max-width:200px">
+            <label>Tanggal</label>
+            <input type="date" id="absenDate" onchange="loadAbsensiForDate()">
+          </div>
+          <div class="form-field" style="flex:1;min-width:220px">
+            <label>Tambah Murid yang Hadir</label>
+            <div style="display:flex;gap:8px">
+              <select id="absenMuridPick" style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;background:var(--white);outline:none;color:var(--dark)"><option value="">Pilih murid...</option></select>
+              <button class="btn btn-primary" onclick="addAbsenMurid()">+ Tambah</button>
+            </div>
+          </div>
+        </div>
+        <div id="absenList"><div style="color:var(--muted);text-align:center;padding:20px">Pilih tanggal lalu tambahkan murid yang hadir hari ini</div></div>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:14px">
+          <button class="btn btn-primary" onclick="doSaveAbsensi()">💾 Simpan Absensi</button>
+          <span id="absenCount" style="font-size:13px;color:var(--muted)"></span>
+        </div>
       </div>
       <div class="section-card">
         <div class="card-head"><h3>📊 Rekap Absensi Bulanan</h3></div>
@@ -572,6 +587,10 @@ function populateSelects(){
   document.querySelectorAll('.sel-murid').forEach(s=>s.innerHTML=po);
   const go='<option value="">Pilih Guru...</option>'+allGuru.map(g=>`<option value="${g.id}">${g.nama}</option>`).join('');
   document.querySelectorAll('.sel-guru').forEach(s=>s.innerHTML=go);
+  // Absensi dropdown (aktif saja)
+  const aktif=allMurid.filter(m=>m.aktif==='aktif');
+  const ap=document.getElementById('absenMuridPick');
+  if(ap) ap.innerHTML='<option value="">Pilih murid...</option>'+aktif.map(m=>`<option value="${m.id}">${m.nama}</option>`).join('');
 }
 
 function showTab(name,btn){
@@ -582,7 +601,7 @@ function showTab(name,btn){
   if(!tabLoaded[name]){tabLoaded[name]=true;
     if(name==='laporan')loadLaporan();
     else if(name==='murid')renderMuridTable();
-    else if(name==='absensi')loadAbsensiList();
+    else if(name==='absensi'){absensiMuridList=[];renderAbsensiList();}
     else if(name==='invoice')loadInvoice();
     else if(name==='slipgaji')loadSlipGaji();
   }
@@ -619,6 +638,8 @@ function renderGuruRekap(laporan){
 
 async function confirmPayment(id,btn){try{await API.updateInvoiceStatus(id,'lunas',today());showToast('Pembayaran dikonfirmasi!','success');btn.closest('div').innerHTML='<span class="badge badge-green">Lunas ✓</span>';tabLoaded.invoice=false;}catch(e){showToast('Gagal','error');}}
 async function rejectPayment(id,btn){try{await API.updateInvoiceStatus(id,'belum_bayar','');showToast('Ditolak','');btn.closest('div[style*="flex"]').parentElement.remove();}catch(e){showToast('Gagal','error');}}
+async function markLunas(id){try{await API.updateInvoiceStatus(id,'lunas',today());showToast('Tandai Lunas! ✓','success');tabLoaded.invoice=false;loadInvoice();}catch(e){showToast('Gagal','error');}}
+async function markBelumBayar(id){if(!confirm('Reset status ke Belum Bayar?'))return;try{await API.updateInvoiceStatus(id,'belum_bayar','');showToast('Status di-reset','');tabLoaded.invoice=false;loadInvoice();}catch(e){showToast('Gagal','error');}}
 
 async function loadLaporan(){
   const tbody=document.getElementById('laporanTbody');tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px"><span class="spinner"></span></td></tr>';
@@ -679,19 +700,72 @@ async function saveEditMurid(){
 }
 async function doDeleteMurid(id,nama){if(!confirm(`Hapus murid "${nama}"?`))return;try{await API.deleteMurid(id);showToast('Dihapus','');allMurid=await API.getMurid();populateSelects();renderMuridTable();}catch(e){showToast('Gagal','error');}}
 
-async function loadAbsensiList(){
-  const tanggal=document.getElementById('absenDate').value;if(!tanggal)return;
-  const el=document.getElementById('absenList');el.innerHTML='<div style="text-align:center;padding:20px"><span class="spinner"></span></div>';
-  const aktifMurid=allMurid.filter(m=>m.aktif==='aktif');if(!aktifMurid.length){el.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px">Tidak ada murid aktif</div>';return;}
-  let existMap={};try{const ex=await API.getAbsensi({tanggal});(Array.isArray(ex)?ex:[]).forEach(a=>existMap[a.murid_id]=a.status);}catch(e){}
-  el.innerHTML=aktifMurid.map(m=>{const st=existMap[m.id]||'hadir';return`<div class="absensi-row" data-murid-id="${m.id}"><div style="font-weight:700;font-size:14px">${m.nama}</div><div class="toggle-group"><button class="toggle-btn ${st==='hadir'?'hadir':''}" onclick="setAbsen(this,'hadir')">✓ Hadir</button><button class="toggle-btn ${st==='absen'?'absen':''}" onclick="setAbsen(this,'absen')">✕ Absen</button></div></div>`;}).join('');
+// ── ABSENSI (sistem tambah per murid) ──────────────────────
+let absensiMuridList = [];
+
+async function loadAbsensiForDate() {
+  const tanggal = document.getElementById('absenDate').value;
+  if (!tanggal) return;
+  absensiMuridList = [];
+  const el = document.getElementById('absenList');
+  el.innerHTML = '<div style="text-align:center;padding:16px"><span class="spinner"></span></div>';
+  try {
+    const ex = await API.getAbsensi({ tanggal });
+    (Array.isArray(ex) ? ex : []).filter(a => a.status === 'hadir').forEach(a => {
+      const m = allMurid.find(x => x.id === a.murid_id);
+      if (m && !absensiMuridList.find(x => x.murid_id === a.murid_id))
+        absensiMuridList.push({ murid_id: a.murid_id, nama: m.nama });
+    });
+  } catch(e) {}
+  renderAbsensiList();
 }
-function setAbsen(btn,type){const grp=btn.closest('.toggle-group');grp.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('hadir','absen'));btn.classList.add(type);}
-async function doSaveAbsensi(){
-  const tanggal=document.getElementById('absenDate').value;if(!tanggal){showToast('Pilih tanggal!','error');return;}
-  const rows=document.querySelectorAll('#absenList .absensi-row');if(!rows.length){showToast('Tidak ada murid','error');return;}
-  const data=[];rows.forEach(r=>{const grp=r.querySelector('.toggle-group');const hd=grp.querySelector('.toggle-btn.hadir');data.push({murid_id:r.dataset.muridId,status:hd?'hadir':'absen'});});
-  try{await API.saveAbsensi(tanggal,data);showToast('Absensi disimpan!','success');}catch(e){showToast('Gagal: '+e.message,'error');}
+
+function addAbsenMurid() {
+  const sel = document.getElementById('absenMuridPick');
+  const id = sel.value;
+  if (!id) { showToast('Pilih murid dulu!', 'error'); return; }
+  if (absensiMuridList.find(x => x.murid_id === id)) { showToast('Sudah ada di list!', ''); return; }
+  const m = allMurid.find(x => x.id === id);
+  if (!m) return;
+  absensiMuridList.push({ murid_id: id, nama: m.nama });
+  sel.value = '';
+  renderAbsensiList();
+}
+
+function removeAbsenMurid(id) {
+  absensiMuridList = absensiMuridList.filter(x => x.murid_id !== id);
+  renderAbsensiList();
+}
+
+function renderAbsensiList() {
+  const el = document.getElementById('absenList');
+  const countEl = document.getElementById('absenCount');
+  if (!absensiMuridList.length) {
+    el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px">Belum ada murid ditambahkan — gunakan dropdown di atas untuk menambah murid yang hadir hari ini</div>';
+    if (countEl) countEl.textContent = '';
+    return;
+  }
+  if (countEl) countEl.textContent = absensiMuridList.length + ' murid hadir';
+  el.innerHTML = absensiMuridList.map(m => `
+    <div class="absensi-row">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="background:#ECFDF5;color:var(--green);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0">✓</span>
+        <span style="font-weight:700;font-size:14px">${m.nama}</span>
+        <span class="badge badge-green">Hadir</span>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="removeAbsenMurid('${m.murid_id}')">✕</button>
+    </div>`).join('');
+}
+
+async function doSaveAbsensi() {
+  const tanggal = document.getElementById('absenDate').value;
+  if (!tanggal) { showToast('Pilih tanggal!', 'error'); return; }
+  if (!absensiMuridList.length) { showToast('Tambahkan minimal 1 murid!', 'error'); return; }
+  const data = absensiMuridList.map(m => ({ murid_id: m.murid_id, status: 'hadir' }));
+  try {
+    await API.saveAbsensi(tanggal, data);
+    showToast(`Absensi disimpan! ${data.length} murid hadir ✓`, 'success');
+  } catch(e) { showToast('Gagal: ' + e.message, 'error'); }
 }
 async function loadAbsensiRekap(){
   const bulan=document.getElementById('absenRekap').value;if(!bulan)return;
@@ -703,7 +777,14 @@ async function loadAbsensiRekap(){
 async function loadInvoice(){
   const tbody=document.getElementById('invoiceTbody');tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px"><span class="spinner"></span></td></tr>';
   try{const arr=Array.isArray(await API.getInvoice())?await API.getInvoice():[];if(!arr.length){tbody.innerHTML='<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:20px">Belum ada invoice</td></tr>';return;}
-  tbody.innerHTML=arr.sort((a,b)=>b.bulan>a.bulan?1:-1).map(inv=>{const m=muridById(inv.murid_id);const bukti=inv.bukti_url?`<img src="${inv.bukti_url}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;cursor:pointer" onclick="window.open('${inv.bukti_url}','_blank')">`:'<span style="color:var(--muted);font-size:12px">–</span>';return`<tr><td><b>${m.nama||inv.murid_id}</b></td><td>${fmtBulan(inv.bulan)}</td><td>${inv.sesi||'–'}</td><td>${fmtRp(inv.nominal)}</td><td>${statusBadge(inv.status||'belum_bayar')}</td><td>${bukti}</td><td><div style="display:flex;gap:4px">${inv.status==='menunggu'?`<button class="btn btn-green btn-sm" onclick="confirmPayment('${inv.id}',this)">✓</button>`:''}<button class="btn btn-danger btn-sm" onclick="deleteInv('${inv.id}',this)">🗑</button></div></td></tr>`;}).join('');}
+  tbody.innerHTML=arr.sort((a,b)=>b.bulan>a.bulan?1:-1).map(inv=>{
+    const m=muridById(inv.murid_id);
+    const st=inv.status||'belum_bayar';
+    const bukti=inv.bukti_url?`<img src="${inv.bukti_url}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;cursor:pointer" onclick="window.open('${inv.bukti_url}','_blank')">`:'<span style="color:var(--muted);font-size:12px">–</span>';
+    const btnLunas=st!=='lunas'?`<button class="btn btn-green btn-sm" onclick="markLunas('${inv.id}')">✓ Lunas</button>`:'';
+    const btnReset=st!=='belum_bayar'?`<button class="btn btn-yellow btn-sm" onclick="markBelumBayar('${inv.id}')">↩ Reset</button>`:'';
+    return`<tr><td><b>${m.nama||inv.murid_id}</b></td><td>${fmtBulan(inv.bulan)}</td><td>${inv.sesi||'–'}</td><td>${fmtRp(inv.nominal)}</td><td>${statusBadge(st)}</td><td>${bukti}</td><td><div style="display:flex;gap:4px;flex-wrap:wrap">${btnLunas}${btnReset}<button class="btn btn-danger btn-sm" onclick="deleteInv('${inv.id}',this)">🗑</button></div></td></tr>`;
+  }).join('');}
   catch(e){document.getElementById('invoiceTbody').innerHTML='<tr><td colspan="7" style="color:var(--red-err);text-align:center">Gagal</td></tr>';}
 }
 
