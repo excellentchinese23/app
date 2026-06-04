@@ -791,7 +791,7 @@ function onInvMuridChange(){const id=document.getElementById('invMurid').value;i
 
 function updateInvPreview(){
   const m=invSelectedMurid;const bulan=document.getElementById('invBulan').value;const sesi=Number(document.getElementById('invSesi').value)||0;const catatan=document.getElementById('invCatatan').value;const fee=m?(m.fee_per_lesson||m.fee||0):0;const total=fee*sesi;
-  document.getElementById('waInvText').textContent=`你好 mum / dads / kakak 👋\n\nTagihan Belajar – Excellent Mandarin\nMurid  : ${m?m.nama:'–'}\nBulan  : ${fmtBulan(bulan)}\nSesi   : ${sesi} sesi × ${fmtRp(fee)}\nTotal  : ${fmtRp(total)}${catatan?'\n\nCatatan: '+catatan:''}\n\nTransfer A/N PT GLOBAL SINAR DUNIA\nNo Rekening : 7615830194 BCA\nNama         : Excellent Mandarin\n\nTolong kirimkan bukti pembayaran 🙏\n\n谢谢 - Excellent Mandarin`;
+  document.getElementById('waInvText').textContent=`你好 mum / dads / kakak \uD83D\uDC4B\n\nTagihan Belajar – Excellent Mandarin\nMurid  : ${m?m.nama:'–'}\nBulan  : ${fmtBulan(bulan)}\nSesi   : ${sesi} sesi × ${fmtRp(fee)}\nTotal  : ${fmtRp(total)}${catatan?'\n\nCatatan: '+catatan:''}\n\nTransfer A/N PT GLOBAL SINAR DUNIA\nNo Rekening : 7615830194 BCA\nNama         : Excellent Mandarin\n\nTolong kirimkan bukti pembayaran \uD83D\uDE4F\n\n谢谢 - Excellent Mandarin`;
 }
 
 async function doGenerateInvoice(){const murid_id=document.getElementById('invMurid').value,bulan=document.getElementById('invBulan').value;if(!murid_id||!bulan){showToast('Pilih murid dan bulan!','error');return;}try{await API.generateInvoice(murid_id,bulan,document.getElementById('invCatatan').value);showToast('Invoice dibuat!','success');tabLoaded.invoice=false;loadInvoice();}catch(e){showToast('Gagal: '+e.message,'error');}}
