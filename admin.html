@@ -665,7 +665,7 @@ async function loadLaporan(){
   try{
     const opts={};const mid=document.getElementById('filterLaporanMurid').value;const bln=document.getElementById('filterLaporanBulan').value;
     if(mid)opts.murid_id=mid;if(bln)opts.bulan=bln;
-    const arr=Array.isArray(await API.getLaporan(opts))?await API.getLaporan(opts):[];
+    const rawLap=await API.getLaporan(opts);const arr=Array.isArray(rawLap)?rawLap:[];
     if(!arr.length){tbody.innerHTML='<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:20px">Belum ada laporan</td></tr>';return;}
     tbody.innerHTML=arr.map(l=>{const m=muridById(l.murid_id),g=guruById(l.guru_id);return`<tr><td>${fmtDate(l.tanggal)}</td><td><b>${m.nama||l.murid_id}</b></td><td>${g.nama||l.guru_id||'–'}</td><td>${l.subject||'–'}</td><td><button class="btn btn-danger btn-sm" onclick="deleteLaporan('${l.id}',this)">🗑</button></td></tr>`;}).join('');
   }catch(e){document.getElementById('laporanTbody').innerHTML=`<tr><td colspan="5" style="color:var(--red-err);text-align:center">Gagal: ${e.message}</td></tr>`;}
@@ -791,15 +791,19 @@ async function loadAbsensiRekap(){
   const tbody=document.getElementById('absenRekapTbody');
   tbody.innerHTML='<tr><td colspan="3" style="text-align:center"><span class="spinner"></span></td></tr>';
   try{
-    const arr=Array.isArray(await API.getAbsensi({bulan}))?await API.getAbsensi({bulan}):[];
-    // Hitung hadir per murid (sistem baru hanya simpan yang hadir)
+    // Refresh allMurid + fetch absensi sekaligus agar data selalu fresh
+    const [rawAbsensi, freshMurid] = await Promise.all([API.getAbsensi({bulan}), API.getMurid()]);
+    allMurid = freshMurid;
+    const arr = Array.isArray(rawAbsensi) ? rawAbsensi : [];
+    // Hitung hadir per murid
     const map={};
     arr.forEach(a=>{ map[a.murid_id]=(map[a.murid_id]||0)+1; });
-    const aktif=allMurid.filter(m=>m.aktif==='aktif');
-    if(!aktif.length){tbody.innerHTML='<tr><td colspan="3" style="color:var(--muted);text-align:center">Belum ada murid aktif</td></tr>';return;}
-    tbody.innerHTML=aktif.map(m=>{
+    // Hanya tampilkan murid aktif yang punya setidaknya 1 sesi
+    const hadirList=allMurid.filter(m=>m.aktif==='aktif'&&(map[m.id]||0)>0);
+    if(!hadirList.length){tbody.innerHTML='<tr><td colspan="3" style="color:var(--muted);text-align:center;padding:16px">Tidak ada data absensi untuk bulan ini</td></tr>';return;}
+    tbody.innerHTML=hadirList.map(m=>{
       const hadir=map[m.id]||0;
-      const color=hadir>=8?'var(--green)':hadir>=4?'var(--teal)':'var(--muted)';
+      const color=hadir>=8?'var(--green)':hadir>=4?'var(--teal)':'var(--red)';
       return`<tr><td><b>${m.nama}</b></td><td><span style="font-size:11px;color:var(--muted)">${m.program||'–'}</span></td><td><span style="color:${color};font-weight:800">${hadir} sesi</span></td></tr>`;
     }).join('');
   }catch(e){tbody.innerHTML='<tr><td colspan="3" style="color:var(--red-err);text-align:center">Gagal memuat</td></tr>';}
@@ -807,7 +811,7 @@ async function loadAbsensiRekap(){
 
 async function loadInvoice(){
   const tbody=document.getElementById('invoiceTbody');tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px"><span class="spinner"></span></td></tr>';
-  try{const arr=Array.isArray(await API.getInvoice())?await API.getInvoice():[];if(!arr.length){tbody.innerHTML='<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:20px">Belum ada invoice</td></tr>';return;}
+  try{const rawInv=await API.getInvoice();const arr=Array.isArray(rawInv)?rawInv:[];if(!arr.length){tbody.innerHTML='<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:20px">Belum ada invoice</td></tr>';return;}
   tbody.innerHTML=arr.sort((a,b)=>b.bulan>a.bulan?1:-1).map(inv=>{
     const m=muridById(inv.murid_id);
     const st=inv.status||'belum_bayar';
