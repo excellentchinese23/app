@@ -814,6 +814,7 @@ async function loadInvoice(){
   try{const rawInv=await API.getInvoice();const arr=Array.isArray(rawInv)?rawInv:[];if(!arr.length){tbody.innerHTML='<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:20px">Belum ada invoice</td></tr>';return;}
   tbody.innerHTML=arr.sort((a,b)=>b.bulan>a.bulan?1:-1).map(inv=>{
     const m=muridById(inv.murid_id);
+    if(!m.nama) return '';  // skip invoice yang muridnya sudah tidak ada
     const st=inv.status||'belum_bayar';
     const bukti=inv.bukti_url?`<img src="${inv.bukti_url}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;cursor:pointer" onclick="window.open('${inv.bukti_url}','_blank')">`:'<span style="color:var(--muted);font-size:12px">–</span>';
     const btnLunas=st!=='lunas'?`<button class="btn btn-green btn-sm" onclick="markLunas('${inv.id}')">✓ Lunas</button>`:'';
