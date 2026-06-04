@@ -350,8 +350,8 @@ tr:hover td{background:#FFFAEC}
         <div class="card-head"><h3>📊 Rekap Absensi Bulanan</h3></div>
         <div class="filter-row"><input type="month" id="absenRekap"><button class="btn btn-dark" onclick="loadAbsensiRekap()">🔍 Tampilkan</button></div>
         <div class="table-wrap">
-          <table><thead><tr><th>Murid</th><th>Hadir</th><th>Absen</th><th>% Kehadiran</th></tr></thead>
-          <tbody id="absenRekapTbody"><tr><td colspan="4" style="color:var(--muted);text-align:center;padding:16px">Pilih bulan lalu klik Tampilkan</td></tr></tbody></table>
+          <table><thead><tr><th>Murid</th><th>Program</th><th>Jumlah Hadir</th></tr></thead>
+          <tbody id="absenRekapTbody"><tr><td colspan="3" style="color:var(--muted);text-align:center;padding:16px">Pilih bulan lalu klik Tampilkan</td></tr></tbody></table>
         </div>
       </div>
     </div>
@@ -430,7 +430,27 @@ tr:hover td{background:#FFFAEC}
         <div class="section-card">
           <div class="card-head"><h3>💵 Generate Slip Gaji</h3></div>
           <div class="form-field" style="margin-bottom:12px"><label>Pilih Guru</label><select id="slipGuruSel" onchange="onSlipGuruChange()"><option value="">Pilih Guru...</option></select></div>
-          <div class="form-field" style="margin-bottom:14px"><label>Periode / Bulan</label><input type="month" id="slipBulan" onchange="onSlipGuruChange()"></div>
+          <div class="form-field" style="margin-bottom:12px"><label>Periode / Bulan</label><input type="month" id="slipBulan" onchange="onSlipGuruChange()"></div>
+          <div id="slipSesiInfo" style="display:none;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;font-size:13px">
+            <div style="font-weight:800;margin-bottom:8px">📋 Sesi dari Laporan Bulan Ini</div>
+            <div style="display:flex;gap:20px">
+              <div>Onsite: <b id="slipAutoOnsite" style="color:var(--red)">0</b> sesi</div>
+              <div>Online: <b id="slipAutoOnline" style="color:var(--teal)">0</b> sesi</div>
+              <div style="border-left:1px solid var(--border);padding-left:16px">Total: <b id="slipAutoTotal">0</b> sesi</div>
+            </div>
+          </div>
+          <div style="margin-bottom:12px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:700">
+              <input type="checkbox" id="slipManualOverride" onchange="toggleManualSesi()" style="width:16px;height:16px;accent-color:var(--red)">
+              Input sesi manual (override dari laporan)
+            </label>
+          </div>
+          <div id="slipManualFields" style="display:none;margin-bottom:4px">
+            <div class="form-row">
+              <div class="form-field"><label>Sesi Onsite</label><input type="number" id="slipOnsiteManual" min="0" value="0" placeholder="0"></div>
+              <div class="form-field"><label>Sesi Online</label><input type="number" id="slipOnlineManual" min="0" value="0" placeholder="0"></div>
+            </div>
+          </div>
           <button class="btn btn-primary" onclick="generateSlip()" style="width:100%;justify-content:center;padding:12px">💵 Generate Slip Gaji</button>
         </div>
         <div class="section-card">
@@ -768,9 +788,21 @@ async function doSaveAbsensi() {
 }
 async function loadAbsensiRekap(){
   const bulan=document.getElementById('absenRekap').value;if(!bulan)return;
-  const tbody=document.getElementById('absenRekapTbody');tbody.innerHTML='<tr><td colspan="4" style="text-align:center"><span class="spinner"></span></td></tr>';
-  try{const arr=Array.isArray(await API.getAbsensi({bulan}))?await API.getAbsensi({bulan}):[];const map={};arr.forEach(a=>{if(!map[a.murid_id])map[a.murid_id]={hadir:0,absen:0};map[a.murid_id][a.status]=(map[a.murid_id][a.status]||0)+1;});tbody.innerHTML=allMurid.filter(m=>m.aktif==='aktif').map(m=>{const d=map[m.id]||{hadir:0,absen:0};const total=d.hadir+d.absen;const pct=total?Math.round(d.hadir/total*100):0;return`<tr><td><b>${m.nama}</b></td><td>${d.hadir}</td><td>${d.absen}</td><td><span style="color:${pct>=80?'var(--green)':pct>=60?'var(--teal)':'var(--red-err)'};font-weight:800">${pct}%</span></td></tr>`;}).join('');}
-  catch(e){tbody.innerHTML='<tr><td colspan="4" style="color:var(--red-err);text-align:center">Gagal memuat</td></tr>';}
+  const tbody=document.getElementById('absenRekapTbody');
+  tbody.innerHTML='<tr><td colspan="3" style="text-align:center"><span class="spinner"></span></td></tr>';
+  try{
+    const arr=Array.isArray(await API.getAbsensi({bulan}))?await API.getAbsensi({bulan}):[];
+    // Hitung hadir per murid (sistem baru hanya simpan yang hadir)
+    const map={};
+    arr.forEach(a=>{ map[a.murid_id]=(map[a.murid_id]||0)+1; });
+    const aktif=allMurid.filter(m=>m.aktif==='aktif');
+    if(!aktif.length){tbody.innerHTML='<tr><td colspan="3" style="color:var(--muted);text-align:center">Belum ada murid aktif</td></tr>';return;}
+    tbody.innerHTML=aktif.map(m=>{
+      const hadir=map[m.id]||0;
+      const color=hadir>=8?'var(--green)':hadir>=4?'var(--teal)':'var(--muted)';
+      return`<tr><td><b>${m.nama}</b></td><td><span style="font-size:11px;color:var(--muted)">${m.program||'–'}</span></td><td><span style="color:${color};font-weight:800">${hadir} sesi</span></td></tr>`;
+    }).join('');
+  }catch(e){tbody.innerHTML='<tr><td colspan="3" style="color:var(--red-err);text-align:center">Gagal memuat</td></tr>';}
 }
 
 async function loadInvoice(){
@@ -791,7 +823,7 @@ function onInvMuridChange(){const id=document.getElementById('invMurid').value;i
 
 function updateInvPreview(){
   const m=invSelectedMurid;const bulan=document.getElementById('invBulan').value;const sesi=Number(document.getElementById('invSesi').value)||0;const catatan=document.getElementById('invCatatan').value;const fee=m?(m.fee_per_lesson||m.fee||0):0;const total=fee*sesi;
-  document.getElementById('waInvText').textContent=`你好 mum / dads / kakak \uD83D\uDC4B\n\nTagihan Belajar – Excellent Mandarin\nMurid  : ${m?m.nama:'–'}\nBulan  : ${fmtBulan(bulan)}\nSesi   : ${sesi} sesi × ${fmtRp(fee)}\nTotal  : ${fmtRp(total)}${catatan?'\n\nCatatan: '+catatan:''}\n\nTransfer A/N PT GLOBAL SINAR DUNIA\nNo Rekening : 7615830194 BCA\nNama         : Excellent Mandarin\n\nTolong kirimkan bukti pembayaran \uD83D\uDE4F\n\n谢谢 - Excellent Mandarin`;
+  document.getElementById('waInvText').textContent=`你好 mum / dads / kakak 👋\n\nTagihan Belajar – Excellent Mandarin\nMurid  : ${m?m.nama:'–'}\nBulan  : ${fmtBulan(bulan)}\nSesi   : ${sesi} sesi × ${fmtRp(fee)}\nTotal  : ${fmtRp(total)}${catatan?'\n\nCatatan: '+catatan:''}\n\nTransfer A/N PT GLOBAL SINAR DUNIA\nNo Rekening : 7615830194 BCA\nNama         : Excellent Mandarin\n\nTolong kirimkan bukti pembayaran 🙏\n\n谢谢 - Excellent Mandarin`;
 }
 
 async function doGenerateInvoice(){const murid_id=document.getElementById('invMurid').value,bulan=document.getElementById('invBulan').value;if(!murid_id||!bulan){showToast('Pilih murid dan bulan!','error');return;}try{await API.generateInvoice(murid_id,bulan,document.getElementById('invCatatan').value);showToast('Invoice dibuat!','success');tabLoaded.invoice=false;loadInvoice();}catch(e){showToast('Gagal: '+e.message,'error');}}
@@ -825,26 +857,57 @@ async function saveGuru(){
 
 async function doDeleteGuru(id,nama){if(!confirm(`Hapus guru "${nama}"?`))return;try{await API.deleteGuru(id);showToast('Guru dihapus','');slipGuruList=await API.getGuru();allGuru=slipGuruList;renderGuruTable();populateSlipGuruSelect();populateSelects();}catch(e){showToast('Gagal','error');}}
 
-function onSlipGuruChange(){
+async function onSlipGuruChange(){
   const id=document.getElementById('slipGuruSel').value;slipCurrentGuru=slipGuruList.find(g=>g.id===id)||null;
   const info=document.getElementById('slipGuruInfo');
-  if(!slipCurrentGuru){info.innerHTML='<span style="color:var(--muted)">Pilih guru untuk melihat info.</span>';return;}
+  if(!slipCurrentGuru){info.innerHTML='<span style="color:var(--muted)">Pilih guru untuk melihat info.</span>';document.getElementById('slipSesiInfo').style.display='none';return;}
   const g=slipCurrentGuru;info.innerHTML=`<div style="display:flex;flex-direction:column;gap:8px;font-size:13px"><div><b>${g.nama}</b> <span style="color:var(--muted)">${g.id_karyawan||'–'}</span></div><div>Honor Onsite: <b style="color:var(--red)">${fmtRp(g.honor_onsite||0)}/sesi</b></div><div>Honor Online: <b style="color:var(--teal)">${fmtRp(g.honor_online||0)}/sesi</b></div><div>WA: ${g.wa||'–'}</div><div>Bergabung: ${g.tgl_bergabung||'–'}</div></div>`;
+  const bulan=document.getElementById('slipBulan').value;
+  if(bulan) await loadSlipSesiFromLaporan(g, bulan);
+}
+
+async function loadSlipSesiFromLaporan(g, bulan){
+  const sesiInfo=document.getElementById('slipSesiInfo');
+  sesiInfo.innerHTML='<div style="font-weight:800;margin-bottom:8px">📋 Sesi dari Laporan Bulan Ini</div><div><span class="spinner"></span> Menghitung...</div>';
+  sesiInfo.style.display='block';
+  try{
+    const laporan=await API.getLaporan({bulan});
+    const myLaporan=(Array.isArray(laporan)?laporan:[]).filter(l=>l.guru_id===g.id);
+    let onsiteCount=0,onlineCount=0;
+    myLaporan.forEach(l=>{const m=allMurid.find(x=>x.id===l.murid_id)||{};if((m.mode||'').toLowerCase()==='onsite')onsiteCount++;else onlineCount++;});
+    sesiInfo.innerHTML=`<div style="font-weight:800;margin-bottom:8px">📋 Sesi dari Laporan Bulan Ini</div><div style="display:flex;gap:20px"><div>Onsite: <b id="slipAutoOnsite" style="color:var(--red)">${onsiteCount}</b> sesi</div><div>Online: <b id="slipAutoOnline" style="color:var(--teal)">${onlineCount}</b> sesi</div><div style="border-left:1px solid var(--border);padding-left:16px">Total: <b id="slipAutoTotal">${onsiteCount+onlineCount}</b> sesi</div></div>`;
+    document.getElementById('slipOnsiteManual').value=onsiteCount;
+    document.getElementById('slipOnlineManual').value=onlineCount;
+  }catch(e){sesiInfo.innerHTML='<div style="color:var(--muted);font-size:12px">Gagal memuat data laporan</div>';}
+}
+
+function toggleManualSesi(){
+  const checked=document.getElementById('slipManualOverride').checked;
+  document.getElementById('slipManualFields').style.display=checked?'block':'none';
 }
 
 async function generateSlip(){
   const g=slipCurrentGuru;const bulan=document.getElementById('slipBulan').value;
   if(!g){showToast('Pilih guru dulu!','error');return;}if(!bulan){showToast('Pilih bulan dulu!','error');return;}
-  showToast('Menghitung sesi...','');
+  const isManual=document.getElementById('slipManualOverride').checked;
+  let onsiteCount=0,onlineCount=0;
+  if(isManual){
+    onsiteCount=Number(document.getElementById('slipOnsiteManual').value)||0;
+    onlineCount=Number(document.getElementById('slipOnlineManual').value)||0;
+  } else {
+    showToast('Menghitung sesi dari laporan...','');
+    try{
+      const laporan=await API.getLaporan({bulan});const myLaporan=(Array.isArray(laporan)?laporan:[]).filter(l=>l.guru_id===g.id);
+      myLaporan.forEach(l=>{const m=allMurid.find(x=>x.id===l.murid_id)||{};if((m.mode||'').toLowerCase()==='onsite')onsiteCount++;else onlineCount++;});
+    }catch(e){showToast('Gagal mengambil laporan: '+e.message,'error');return;}
+  }
   try{
-    const laporan=await API.getLaporan({bulan});const myLaporan=(Array.isArray(laporan)?laporan:[]).filter(l=>l.guru_id===g.id);
-    let onsiteCount=0,onlineCount=0;
-    myLaporan.forEach(l=>{const m=allMurid.find(x=>x.id===l.murid_id)||{};if((m.mode||'').toLowerCase()==='onsite')onsiteCount++;else onlineCount++;});
     const honorO=Number(g.honor_onsite)||0,honorOL=Number(g.honor_online)||0;
     const totalOnsite=onsiteCount*honorO,totalOnline=onlineCount*honorOL,total=totalOnsite+totalOnline;
     const[y,m]=bulan.split('-');const lastDay=new Date(y,m,0).getDate();const bulanShort=new Date(y,m-1).toLocaleString('id-ID',{month:'short'});
     const periodeStr=`1 ${bulanShort} ${y} – ${lastDay} ${bulanShort} ${y}`;
-    slipData={g,bulan,onsiteCount,onlineCount,totalOnsite,totalOnline,total,periodeStr};
+    const sumberSesi=isManual?'(manual)':'(dari laporan)';
+    slipData={g,bulan,onsiteCount,onlineCount,totalOnsite,totalOnline,total,periodeStr,sumberSesi};
     document.getElementById('spPeriode').textContent=periodeStr;document.getElementById('spNama').textContent=g.nama;document.getElementById('spJabatan').textContent=g.jabatan||'Teacher';document.getElementById('spID').textContent=g.id_karyawan||'–';document.getElementById('spPTKP').textContent=g.status_ptkp||'TK0';document.getElementById('spTglGabung').textContent=g.tgl_bergabung||'–';document.getElementById('spOnsiteSesi').textContent=onsiteCount;document.getElementById('spOnlineSesi').textContent=onlineCount;document.getElementById('spOnsiteNom').textContent=fmtRp(totalOnsite);document.getElementById('spOnlineNom').textContent=fmtRp(totalOnline);document.getElementById('spTotalPend').textContent=fmtRp(total);document.getElementById('spTHP').textContent=fmtRp(total);document.getElementById('spTHPFooter').textContent=fmtRp(total);
     document.getElementById('slipWAText').textContent=buildSlipWAText();
     document.getElementById('slipPreviewCard').style.display='block';document.getElementById('slipPreviewCard').scrollIntoView({behavior:'smooth',block:'start'});
@@ -860,9 +923,4 @@ function kirimSlipWA(){const wa=String(slipCurrentGuru?.wa||'').replace(/\D/g,''
 function printSlip(){
   const slip=document.getElementById('slipVisual');const g=slipCurrentGuru;const bulan=document.getElementById('slipBulan').value||'';
   const win=window.open('','_blank','width=900,height=700');
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Slip Gaji – ${g?.nama||''} – ${bulan}</title><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Nunito',sans-serif;background:#fff;padding:32px}@page{margin:16mm}@media print{body{padding:0}}.slip-wrap{border:1.5px solid #E8D8C8;border-radius:16px;overflow:hidden;max-width:720px;margin:0 auto}.slip-header{padding:22px 28px;display:flex;justify-content:space-between;align-items:flex-start}.slip-confidential{background:#E8476A;color:#fff;padding:6px 16px;border-radius:8px;font-weight:700;font-size:12px;display:inline-block}.slip-tables{padding:0 28px 20px;display:grid;grid-template-columns:1fr 1fr;gap:14px}.slip-table{width:100%;border-collapse:collapse;font-size:13px}.slip-table th{padding:10px 12px;text-align:left;color:#fff;font-weight:700}.slip-table td{padding:10px 12px;border-bottom:1px solid #E8D8C8}.total-row td{font-weight:800;background:#FFF4DC}.slip-footer{padding:14px 28px;border-top:2px solid #E8D8C8;display:flex;justify-content:space-between;align-items:center}</style></head><body>${slip.outerHTML}<script>window.onload=()=>window.print()<\/script></body></html>`);
-  win.document.close();
-}
-</script>
-</body>
-</html>
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Slip Gaji – ${g?.nama||''} – ${bulan}</title><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Nunito',sans-serif;background:#fff;padding:32px}@page{margin:16mm}@media print{body{padding:0}}.slip-wrap{border:1.5px solid #E8D8C8;border-radius:16px;overflow:hidden;max-width:720px;margin:0 auto}.slip-header{padding:22px 28px;display:flex;justify-content:space-between;align-items:flex-start}.slip-confidential{background:#E8476A;color:#fff;padding:6px 16px;border-radius:8px;font-weight:700;font-size:12px;display:inline-block}.slip-tables{padding:0 28px 20px;display:grid;grid-template-columns:1fr 1fr;gap:14px}.slip-table{width:100%;border-collapse:collapse;font-size:13px}.slip-table th{padding:10px 12px;text-align:left;color:#fff;font-weight:700}.slip-table td{padding:10px 12px;border-bottom:1px solid #E8D8C8}.total-row td{font-weight:800;background:#FFF4DC}.slip-footer{padding:14px 28px;border-top:2px solid #E8D8C8;display:flex;justify-content:space-b
