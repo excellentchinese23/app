@@ -800,7 +800,7 @@ async function doGenerateInvoice(){const murid_id=document.getElementById('invMu
 async function generateAllInvoice(){const bulan=document.getElementById('invBulan').value;if(!bulan){showToast('Pilih bulan!','error');return;}if(!confirm(`Generate invoice semua murid aktif – ${fmtBulan(bulan)}?`))return;const aktif=allMurid.filter(m=>m.aktif==='aktif');let ok=0,err=0;for(const m of aktif){try{await API.generateInvoice(m.id,bulan,'');ok++;}catch(e){err++;}}showToast(`Selesai: ${ok} berhasil${err?' | '+err+' gagal':''}`,ok&&!err?'success':'');tabLoaded.invoice=false;loadInvoice();}
 
 function copyInvWA(){navigator.clipboard.writeText(document.getElementById('waInvText').textContent);showToast('Disalin!','success');}
-function kirimInvWA(){const wa=((invSelectedMurid?.wa_laporan||invSelectedMurid?.wa_ortu)||'').replace(/\D/g,'');if(!wa){showToast('No. WA tidak tersedia!','error');return;}const num=wa.startsWith('0')?'62'+wa.slice(1):'62'+wa;window.open('https://wa.me/'+num+'?text='+encodeURIComponent(document.getElementById('waInvText').textContent),'_blank');}
+function kirimInvWA(){const wa=String(invSelectedMurid?.wa_laporan||invSelectedMurid?.wa_ortu||'').replace(/\D/g,'');if(!wa){showToast('No. WA tidak tersedia!','error');return;}const num=wa.startsWith('0')?'62'+wa.slice(1):'62'+wa;window.open('https://wa.me/'+num+'?text='+encodeURIComponent(document.getElementById('waInvText').textContent),'_blank');}
 async function deleteInv(id,btn){if(!confirm('Hapus invoice?'))return;try{await API.deleteInvoice(id);btn.closest('tr').remove();showToast('Dihapus','');}catch(e){showToast('Gagal','error');}}
 
 // ══ SLIP GAJI ══
@@ -856,7 +856,7 @@ async function generateSlip(){
 function buildSlipWAText(){if(!slipData)return'—';const{g,periodeStr,onsiteCount,onlineCount,totalOnsite,totalOnline,total}=slipData;const honorO=Number(g.honor_onsite)||0,honorOL=Number(g.honor_online)||0;return`*Slip Gaji – Excellent Mandarin Course*\nPeriode: ${periodeStr}\n\nNama    : ${g.nama}\nID      : ${g.id_karyawan||'–'}\nStatus  : Karyawan Freelance Teacher\n\n*Pendapatan:*\nHonor Onsite (${onsiteCount} sesi × ${fmtRp(honorO)}) : *${fmtRp(totalOnsite)}*\nHonor Online (${onlineCount} sesi × ${fmtRp(honorOL)}) : *${fmtRp(totalOnline)}*\n\n*Take Home Pay : ${fmtRp(total)}*\n\nPT Global Sinar Dunia – Excellent Mandarin Course\n谢谢 🎋`;}
 
 function copySlipWA(){navigator.clipboard.writeText(buildSlipWAText());showToast('Pesan disalin!','success');}
-function kirimSlipWA(){const wa=(slipCurrentGuru?.wa||'').replace(/\D/g,'');if(!wa){showToast('No. WA guru tidak tersedia!','error');return;}const num=wa.startsWith('0')?'62'+wa.slice(1):'62'+wa;window.open('https://wa.me/'+num+'?text='+encodeURIComponent(buildSlipWAText()),'_blank');}
+function kirimSlipWA(){const wa=String(slipCurrentGuru?.wa||'').replace(/\D/g,'');if(!wa){showToast('No. WA guru tidak tersedia!','error');return;}const num=wa.startsWith('0')?'62'+wa.slice(1):'62'+wa;window.open('https://wa.me/'+num+'?text='+encodeURIComponent(buildSlipWAText()),'_blank');}
 
 function printSlip(){
   const slip=document.getElementById('slipVisual');const g=slipCurrentGuru;const bulan=document.getElementById('slipBulan').value||'';

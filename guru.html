@@ -397,7 +397,7 @@ function copyWA() {
 }
 
 function kirimWA() {
-  const wa  = document.getElementById('waNum').textContent.replace(/\D/g, '');
+  const wa  = String(document.getElementById('waNum').textContent||'').replace(/\D/g, '');
   if (!wa || wa === '') { showToast('No. WA tidak tersedia!', 'error'); return; }
   const num = wa.startsWith('0') ? '62' + wa.slice(1) : '62' + wa;
   const msg = encodeURIComponent(document.getElementById('waText').textContent);
