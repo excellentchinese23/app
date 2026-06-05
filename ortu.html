@@ -301,7 +301,7 @@ async function uploadProof(){
     const inv=invoiceData.find(i=>i.id===pendingInvoiceId);
     await API.uploadBukti(pendingInvoiceId,muridData.id,inv?.bulan,file);
     showToast('Bukti berhasil dikirim! Menunggu konfirmasi admin ✅','success');btn.textContent='✅ Terkirim';
-    invoiceData=Array.isArray(await API.getInvoice({murid_id:muridData.id}))?await API.getInvoice({murid_id:muridData.id}):[];renderInvoice();
+    const rawInv=await API.getInvoice({murid_id:muridData.id});invoiceData=Array.isArray(rawInv)?rawInv:[];renderInvoice();
   }catch(e){showToast('Gagal: '+e.message,'error');btn.textContent='📤 Upload Bukti Pembayaran';btn.disabled=false;}
 }
 

@@ -21,7 +21,7 @@ const API = {
 
   // MURID  (tipe_program | mode | program | fee_per_lesson)
   getMurid:      (opts={}) => API.post({ action:'getMurid', ...opts }),
-  getMuridByLink:(link_id) => API.get({ action:'getMuridByLink', link_id }),
+  getMuridByLink:(link_id) => API.post({ action:'getMuridByLink', link_id }),
   addMurid:      (d)       => API.post({ action:'addMurid', ...d }),
   updateMurid:   (d)       => API.post({ action:'updateMurid', ...d }),
   deleteMurid:   (id)      => API.post({ action:'deleteMurid', id }),
