@@ -305,6 +305,14 @@ tr:hover td{background:#FFFAEC}
             <div class="form-field"><label>Status</label><select id="fMAktif"><option value="aktif">Aktif</option><option value="nonaktif">Nonaktif</option></select></div>
           </div>
           <div class="form-row">
+            <div class="form-field">
+              <label>Kuota Sesi per Invoice</label>
+              <input type="number" id="fMSesiInvoice" value="8" min="1" list="sesiPresets" placeholder="8">
+              <datalist id="sesiPresets"><option value="4"><option value="8"><option value="16"><option value="24"></datalist>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px">Preset: 4 / 8 / 16 / 24 — atau isi manual</div>
+            </div>
+          </div>
+          <div class="form-row">
             <div class="form-field"><label>Tanggal Mulai Les</label><input type="date" id="fMTglMasuk"></div>
             <div class="form-field"><label>Tanggal Berhenti Les <span style="font-weight:400;text-transform:none">(opsional)</span></label><input type="date" id="fMTglBerhenti"></div>
           </div>
@@ -548,7 +556,14 @@ tr:hover td{background:#FFFAEC}
       <div class="form-field"><label>Tanggal Mulai Les</label><input type="date" id="editTglMasuk"></div>
       <div class="form-field"><label>Tanggal Berhenti Les <span style="font-weight:400;text-transform:none">(opsional)</span></label><input type="date" id="editTglBerhenti"></div>
     </div>
-    <div class="form-row"><div class="form-field"><label>Status</label><select id="editAktif"><option value="aktif">Aktif</option><option value="nonaktif">Nonaktif</option></select></div></div>
+    <div class="form-row">
+      <div class="form-field"><label>Status</label><select id="editAktif"><option value="aktif">Aktif</option><option value="nonaktif">Nonaktif</option></select></div>
+      <div class="form-field">
+        <label>Kuota Sesi per Invoice</label>
+        <input type="number" id="editSesiInvoice" min="1" list="sesiPresets" placeholder="8">
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Preset: 4 / 8 / 16 / 24 — atau isi manual</div>
+      </div>
+    </div>
     <div class="form-actions">
       <button class="btn btn-primary" onclick="saveEditMurid()">💾 Simpan</button>
       <button class="btn btn-dark" onclick="closeModal('editMuridModal')">Batal</button>
@@ -680,13 +695,43 @@ async function saveLaporan(){
 }
 async function deleteLaporan(id,btn){if(!confirm('Hapus laporan?'))return;try{await API.deleteLaporan(id);btn.closest('tr').remove();showToast('Dihapus','');}catch(e){showToast('Gagal','error');}}
 
-function renderMuridTable(){
+let sesiMap = {};
+
+async function renderMuridTable(){
   const total=allMurid.length,aktifC=allMurid.filter(m=>m.aktif==='aktif').length;
   document.getElementById('muridTotal').textContent=total;document.getElementById('muridAktif').textContent=aktifC;document.getElementById('muridNonaktif').textContent=total-aktifC;
   const tbody=document.getElementById('muridTbody');
   if(!total){tbody.innerHTML='<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px">Belum ada murid</td></tr>';return;}
-  tbody.innerHTML=allMurid.map(m=>`<tr>
+
+  // Load sesi berjalan semua murid aktif (satu panggilan)
+  try {
+    const sesiList = await API.getSesiAllMurid();
+    sesiMap = {};
+    (Array.isArray(sesiList)?sesiList:[]).forEach(s=>{ sesiMap[s.murid_id]=s; });
+  } catch(e) { sesiMap={}; }
+
+  const siapInvoice = Object.values(sesiMap).filter(s=>s.sesi>=(s.sesi_per_invoice||8));
+  if(siapInvoice.length>0){
+    const names = siapInvoice.map(s=>s.nama).join(', ');
+    tbody.closest('.table-wrap').insertAdjacentHTML('beforebegin',
+      `<div id="sesiAlert" style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:12px;padding:12px 16px;margin-bottom:12px;font-size:13px;font-weight:700;color:#DC2626">
+        ⚠️ ${siapInvoice.length} murid sudah ≥ 8 sesi — siap dibuatkan invoice: <span style="font-weight:600">${names}</span>
+      </div>`
+    );
+  } else {
+    document.getElementById('sesiAlert')?.remove();
+  }
+
+  tbody.innerHTML=allMurid.map(m=>{
+    const s=sesiMap[m.id];
+    const sesiBadge = m.aktif==='aktif' && s
+      ? (s.sesi>=(s.sesi_per_invoice||8)
+          ? `<div style="margin-top:4px"><span style="background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;border-radius:6px;font-size:11px;font-weight:700;padding:2px 8px">⚠️ ${s.sesi}/${s.sesi_per_invoice||8} sesi — Siap Invoice!</span></div>`
+          : `<div style="margin-top:4px"><span style="background:#F0FDF4;color:#16A34A;border:1px solid #BBF7D0;border-radius:6px;font-size:11px;font-weight:600;padding:2px 8px">📚 ${s.sesi}/${s.sesi_per_invoice||8} sesi${s.since?' sejak '+fmtDate(s.since):''}</span></div>`)
+      : '';
+    return `<tr>
     <td><b>${m.nama}</b>
+      ${sesiBadge}
       ${m.link_id?`<div style="font-size:11px;margin-top:2px"><a href="ortu.html?id=${m.link_id}" target="_blank" style="color:var(--teal);font-weight:700">🔗 Link Ortu</a></div>`:''}
       <div style="font-size:11px;color:var(--muted);margin-top:3px">
         📅 Mulai: ${m.tgl_masuk||'–'}
@@ -698,24 +743,25 @@ function renderMuridTable(){
     <td>${m.wa_ortu||'–'}</td>
     <td>${statusBadge(m.aktif||'nonaktif')}</td>
     <td><div style="display:flex;gap:6px"><button class="btn btn-teal btn-sm" onclick="openEditMurid('${m.id}')">✏️</button><button class="btn btn-danger btn-sm" onclick="doDeleteMurid('${m.id}','${esc(m.nama)}')">🗑</button></div></td>
-  </tr>`).join('');
+  </tr>`;
+  }).join('');
 }
 
 async function saveMurid(){
   const nama=document.getElementById('fMNama').value.trim();if(!nama){showToast('Nama wajib diisi!','error');return;}
-  try{await API.addMurid({nama,tipe_program:document.getElementById('fMTipe').value,mode:document.getElementById('fMMode').value,program:document.getElementById('fMProgram').value,fee_per_lesson:Number(document.getElementById('fMFee').value)||0,wa_ortu:document.getElementById('fMWaOrtu').value.trim(),wa_laporan:document.getElementById('fMWaLaporan').value.trim(),tgl_masuk:document.getElementById('fMTglMasuk').value,tgl_berhenti:document.getElementById('fMTglBerhenti').value,aktif:document.getElementById('fMAktif').value});
+  try{await API.addMurid({nama,tipe_program:document.getElementById('fMTipe').value,mode:document.getElementById('fMMode').value,program:document.getElementById('fMProgram').value,fee_per_lesson:Number(document.getElementById('fMFee').value)||0,wa_ortu:document.getElementById('fMWaOrtu').value.trim(),wa_laporan:document.getElementById('fMWaLaporan').value.trim(),tgl_masuk:document.getElementById('fMTglMasuk').value,tgl_berhenti:document.getElementById('fMTglBerhenti').value,aktif:document.getElementById('fMAktif').value,sesi_per_invoice:Number(document.getElementById('fMSesiInvoice').value)||8});
   showToast('Murid ditambahkan!','success');toggleForm('form-murid');['fMNama','fMWaOrtu','fMWaLaporan','fMFee'].forEach(id=>document.getElementById(id).value='');allMurid=await API.getMurid();populateSelects();renderMuridTable();}
   catch(e){showToast('Gagal: '+e.message,'error');}
 }
 
 function openEditMurid(id){
   const m=allMurid.find(x=>x.id===id);if(!m)return;
-  document.getElementById('editMuridId').value=m.id;document.getElementById('editName').value=m.nama||'';document.getElementById('editFee').value=m.fee_per_lesson||m.fee||'';document.getElementById('editWA').value=m.wa_ortu||'';document.getElementById('editWALaporan').value=m.wa_laporan||'';document.getElementById('editTipe').value=m.tipe_program||'Private';document.getElementById('editMode').value=m.mode||'Online';document.getElementById('editProgram').value=m.program||'HSK';document.getElementById('editTglMasuk').value=m.tgl_masuk||'';document.getElementById('editTglBerhenti').value=m.tgl_berhenti||'';document.getElementById('editAktif').value=m.aktif||'aktif';document.getElementById('editMuridModal').classList.add('open');
+  document.getElementById('editMuridId').value=m.id;document.getElementById('editName').value=m.nama||'';document.getElementById('editFee').value=m.fee_per_lesson||m.fee||'';document.getElementById('editWA').value=m.wa_ortu||'';document.getElementById('editWALaporan').value=m.wa_laporan||'';document.getElementById('editTipe').value=m.tipe_program||'Private';document.getElementById('editMode').value=m.mode||'Online';document.getElementById('editProgram').value=m.program||'HSK';document.getElementById('editTglMasuk').value=m.tgl_masuk||'';document.getElementById('editTglBerhenti').value=m.tgl_berhenti||'';document.getElementById('editAktif').value=m.aktif||'aktif';document.getElementById('editSesiInvoice').value=m.sesi_per_invoice||8;document.getElementById('editMuridModal').classList.add('open');
 }
 
 async function saveEditMurid(){
   const id=document.getElementById('editMuridId').value,nama=document.getElementById('editName').value.trim();if(!id||!nama){showToast('Data tidak valid!','error');return;}
-  try{await API.updateMurid({id,nama,tipe_program:document.getElementById('editTipe').value,mode:document.getElementById('editMode').value,program:document.getElementById('editProgram').value,fee_per_lesson:Number(document.getElementById('editFee').value)||0,wa_ortu:document.getElementById('editWA').value.trim(),wa_laporan:document.getElementById('editWALaporan').value.trim(),tgl_masuk:document.getElementById('editTglMasuk').value,tgl_berhenti:document.getElementById('editTglBerhenti').value,aktif:document.getElementById('editAktif').value});showToast('Data diperbarui!','success');closeModal('editMuridModal');allMurid=await API.getMurid();populateSelects();renderMuridTable();}
+  try{await API.updateMurid({id,nama,tipe_program:document.getElementById('editTipe').value,mode:document.getElementById('editMode').value,program:document.getElementById('editProgram').value,fee_per_lesson:Number(document.getElementById('editFee').value)||0,wa_ortu:document.getElementById('editWA').value.trim(),wa_laporan:document.getElementById('editWALaporan').value.trim(),tgl_masuk:document.getElementById('editTglMasuk').value,tgl_berhenti:document.getElementById('editTglBerhenti').value,aktif:document.getElementById('editAktif').value,sesi_per_invoice:Number(document.getElementById('editSesiInvoice').value)||8});showToast('Data diperbarui!','success');closeModal('editMuridModal');allMurid=await API.getMurid();populateSelects();renderMuridTable();}
   catch(e){showToast('Gagal: '+e.message,'error');}
 }
 async function doDeleteMurid(id,nama){if(!confirm(`Hapus murid "${nama}"?`))return;try{await API.deleteMurid(id);showToast('Dihapus','');allMurid=await API.getMurid();populateSelects();renderMuridTable();}catch(e){showToast('Gagal','error');}}
