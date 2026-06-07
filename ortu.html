@@ -180,6 +180,11 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--dark);min-
     </div>
     <div class="section-card" id="uploadCard" style="display:none">
       <div class="card-title">📎 Upload Bukti Pembayaran</div>
+      <div id="uploadNominalBox" style="background:var(--red-bg);border:1.5px solid #FECACA;border-radius:12px;padding:12px 16px;margin-bottom:12px;display:none">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Jumlah yang harus dibayar</div>
+        <div id="uploadNominalVal" style="font-family:'Fredoka One',cursive;font-size:26px;color:var(--red2)">–</div>
+        <div id="uploadBulanVal" style="font-size:12px;color:var(--muted);margin-top:2px">–</div>
+      </div>
       <p style="font-size:13px;color:var(--muted);margin-bottom:8px" id="uploadDesc">Upload struk transfer:</p>
       <div class="upload-area">
         <input type="file" accept="image/*" id="proofFile" onchange="previewProof(this)">
@@ -287,7 +292,16 @@ function renderInvoice(){
       <span class="badge ${badgeCls(inv.status)}">${badgeLbl(inv.status)}</span>
     </div>`).join('');
   const unpaid=sorted.find(i=>i.status==='belum_bayar');
-  if(unpaid){pendingInvoiceId=unpaid.id;document.getElementById('uploadCard').style.display='block';document.getElementById('uploadDesc').textContent=`Upload struk transfer untuk tagihan ${fmtBulan(unpaid.bulan)} (${fmtRupiah(unpaid.nominal)}):`;}
+  if(unpaid){
+    pendingInvoiceId=unpaid.id;
+    document.getElementById('uploadCard').style.display='block';
+    document.getElementById('uploadDesc').textContent=`Upload struk transfer untuk tagihan ${fmtBulan(unpaid.bulan)}:`;
+    document.getElementById('uploadNominalBox').style.display='block';
+    document.getElementById('uploadNominalVal').textContent=fmtRupiah(unpaid.nominal);
+    document.getElementById('uploadBulanVal').textContent=fmtBulan(unpaid.bulan)+' · '+(unpaid.sesi||'–')+' sesi';
+  } else {
+    document.getElementById('uploadCard').style.display='none';
+  }
 }
 
 function previewProof(input){if(input.files&&input.files[0]){const r=new FileReader();r.onload=e=>{const img=document.getElementById('proofPreview');img.src=e.target.result;img.style.display='block';document.getElementById('uploadLabel').style.display='none';};r.readAsDataURL(input.files[0]);}}
@@ -300,7 +314,7 @@ async function uploadProof(){
   try{
     const inv=invoiceData.find(i=>i.id===pendingInvoiceId);
     await API.uploadBukti(pendingInvoiceId,muridData.id,inv?.bulan,file);
-    showToast('Bukti berhasil dikirim! Menunggu konfirmasi admin ✅','success');btn.textContent='✅ Terkirim';
+    showToast('Pembayaran dikonfirmasi! Tagihan sudah Lunas ✅','success');btn.textContent='✅ Lunas';
     const rawInv=await API.getInvoice({murid_id:muridData.id});invoiceData=Array.isArray(rawInv)?rawInv:[];renderInvoice();
   }catch(e){showToast('Gagal: '+e.message,'error');btn.textContent='📤 Upload Bukti Pembayaran';btn.disabled=false;}
 }
