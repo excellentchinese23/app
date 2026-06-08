@@ -286,8 +286,8 @@ function renderInvoice(){
     <div class="invoice-card">
       <div style="font-size:24px">🧾</div>
       <div class="inv-info">
-        <div class="inv-month">${fmtBulan(inv.bulan)}</div>
-        <div class="inv-amount">${inv.sesi?inv.sesi+' sesi · ':''} ${fmtRupiah(inv.nominal)}</div>
+        <div class="inv-month">${fmtBulan(inv.bulan)}${inv.sesi?` <span style="font-size:11px;font-weight:600;color:var(--muted)">(${inv.sesi} sesi)</span>`:''}</div>
+        <div style="font-family:'Fredoka One',cursive;font-size:22px;color:var(--red2);margin-top:2px">${fmtRupiah(inv.nominal)}</div>
       </div>
       <span class="badge ${badgeCls(inv.status)}">${badgeLbl(inv.status)}</span>
     </div>`).join('');

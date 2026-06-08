@@ -907,7 +907,7 @@ async function loadInvoice(){
     const m=muridById(inv.murid_id);
     if(!m.nama) return '';  // skip invoice yang muridnya sudah tidak ada
     const st=inv.status||'belum_bayar';
-    const bukti=inv.bukti_url?`<img src="${inv.bukti_url}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;cursor:pointer" onclick="window.open('${inv.bukti_url}','_blank')">`:'<span style="color:var(--muted);font-size:12px">–</span>';
+    const bukti=inv.bukti_url?`<img src="${inv.bukti_url}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;cursor:pointer" onclick="window.open('${inv.bukti_url}','_blank')" title="Lihat bukti transfer">`:'<span style="color:var(--muted);font-size:12px">–</span>';
     const btnLunas=st!=='lunas'?`<button class="btn btn-green btn-sm" onclick="markLunas('${inv.id}')">✓ Lunas</button>`:'';
     const btnReset=st!=='belum_bayar'?`<button class="btn btn-yellow btn-sm" onclick="markBelumBayar('${inv.id}')">↩ Reset</button>`:'';
     return`<tr><td><b>${m.nama||inv.murid_id}</b></td><td>${fmtBulan(inv.bulan)}</td><td>${inv.sesi||'–'}</td><td>${fmtRp(inv.nominal)}</td><td>${statusBadge(st)}</td><td>${bukti}</td><td><div style="display:flex;gap:4px;flex-wrap:wrap">${btnLunas}${btnReset}<button class="btn btn-danger btn-sm" onclick="deleteInv('${inv.id}',this)">🗑</button></div></td></tr>`;
@@ -915,20 +915,45 @@ async function loadInvoice(){
   catch(e){document.getElementById('invoiceTbody').innerHTML='<tr><td colspan="7" style="color:var(--red-err);text-align:center">Gagal</td></tr>';}
 }
 
-function onInvMuridChange(){const id=document.getElementById('invMurid').value;invSelectedMurid=allMurid.find(m=>m.id===id)||null;const fee=invSelectedMurid?(invSelectedMurid.fee_per_lesson||invSelectedMurid.fee||0):0;document.getElementById('invFeeDisplay').textContent=fee?fmtRp(fee)+' / sesi':'– pilih murid dulu –';updateInvPreview();}
+async function onInvMuridChange(){
+  const id=document.getElementById('invMurid').value;
+  invSelectedMurid=allMurid.find(m=>m.id===id)||null;
+  const fee=invSelectedMurid?(invSelectedMurid.fee_per_lesson||invSelectedMurid.fee||0):0;
+  document.getElementById('invFeeDisplay').textContent=fee?fmtRp(fee)+' / sesi':'– pilih murid dulu –';
+  // Auto-load sesi berjalan
+  if(id){
+    try{
+      const s=await API.getSesiMurid(id);
+      document.getElementById('invSesi').value=s.sesi||0;
+    }catch(e){}
+  } else {
+    document.getElementById('invSesi').value='';
+  }
+  updateInvPreview();
+}
 
 function updateInvPreview(){
   const m=invSelectedMurid;const bulan=document.getElementById('invBulan').value;const sesi=Number(document.getElementById('invSesi').value)||0;const catatan=document.getElementById('invCatatan').value;const fee=m?(m.fee_per_lesson||m.fee||0):0;const total=fee*sesi;
   document.getElementById('waInvText').textContent=`你好 mum / dads / kakak 👋\n\nTagihan Belajar – Excellent Mandarin\nMurid  : ${m?m.nama:'–'}\nBulan  : ${fmtBulan(bulan)}\nSesi   : ${sesi} sesi × ${fmtRp(fee)}\nTotal  : ${fmtRp(total)}${catatan?'\n\nCatatan: '+catatan:''}\n\nTransfer A/N PT GLOBAL SINAR DUNIA\nNo Rekening : 7615830194 BCA\nNama         : Excellent Mandarin\n\nTolong kirimkan bukti pembayaran 🙏\n\n谢谢 - Excellent Mandarin`;
 }
 
-async function doGenerateInvoice(){const murid_id=document.getElementById('invMurid').value,bulan=document.getElementById('invBulan').value;if(!murid_id||!bulan){showToast('Pilih murid dan bulan!','error');return;}try{await API.generateInvoice(murid_id,bulan,document.getElementById('invCatatan').value);showToast('Invoice dibuat!','success');tabLoaded.invoice=false;loadInvoice();}catch(e){showToast('Gagal: '+e.message,'error');}}
+async function doGenerateInvoice(){
+  const murid_id=document.getElementById('invMurid').value,bulan=document.getElementById('invBulan').value;
+  const sesi=Number(document.getElementById('invSesi').value)||0;
+  if(!murid_id||!bulan){showToast('Pilih murid dan bulan!','error');return;}
+  if(!sesi){showToast('Jumlah sesi tidak boleh 0!','error');return;}
+  try{
+    await API.generateInvoice(murid_id,bulan,document.getElementById('invCatatan').value,sesi);
+    showToast('Invoice dibuat!','success');tabLoaded.invoice=false;loadInvoice();
+  }catch(e){showToast('Gagal: '+e.message,'error');}
+}
 
 async function generateAllInvoice(){const bulan=document.getElementById('invBulan').value;if(!bulan){showToast('Pilih bulan!','error');return;}if(!confirm(`Generate invoice semua murid aktif – ${fmtBulan(bulan)}?`))return;const aktif=allMurid.filter(m=>m.aktif==='aktif');let ok=0,err=0;for(const m of aktif){try{await API.generateInvoice(m.id,bulan,'');ok++;}catch(e){err++;}}showToast(`Selesai: ${ok} berhasil${err?' | '+err+' gagal':''}`,ok&&!err?'success':'');tabLoaded.invoice=false;loadInvoice();}
 
 function copyInvWA(){navigator.clipboard.writeText(document.getElementById('waInvText').textContent);showToast('Disalin!','success');}
 function kirimInvWA(){const wa=String(invSelectedMurid?.wa_laporan||invSelectedMurid?.wa_ortu||'').replace(/\D/g,'');if(!wa){showToast('No. WA tidak tersedia!','error');return;}const num=wa.startsWith('0')?'62'+wa.slice(1):'62'+wa;window.open('https://wa.me/'+num+'?text='+encodeURIComponent(document.getElementById('waInvText').textContent),'_blank');}
 async function deleteInv(id,btn){if(!confirm('Hapus invoice?'))return;try{await API.deleteInvoice(id);btn.closest('tr').remove();showToast('Dihapus','');}catch(e){showToast('Gagal','error');}}
+
 
 // ══ SLIP GAJI ══
 async function loadSlipGaji(){

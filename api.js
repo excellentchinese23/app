@@ -19,20 +19,22 @@ const API = {
     return json.data;
   },
 
-  // MURID  (tipe_program | mode | program | fee_per_lesson)
-  getMurid:      (opts={}) => API.post({ action:'getMurid', ...opts }),
-  getMuridByLink:(link_id) => API.post({ action:'getMuridByLink', link_id }),
-  addMurid:      (d)       => API.post({ action:'addMurid', ...d }),
-  updateMurid:   (d)       => API.post({ action:'updateMurid', ...d }),
-  deleteMurid:   (id)      => API.post({ action:'deleteMurid', id }),
+  // MURID
+  getMurid:        (opts={})  => API.post({ action:'getMurid', ...opts }),
+  getMuridByLink:  (link_id)  => API.post({ action:'getMuridByLink', link_id }),
+  getSesiMurid:    (murid_id) => API.post({ action:'getSesiMurid', murid_id }),
+  getSesiAllMurid: ()         => API.post({ action:'getSesiAllMurid' }),
+  addMurid:        (d)        => API.post({ action:'addMurid', ...d }),
+  updateMurid:     (d)        => API.post({ action:'updateMurid', ...d }),
+  deleteMurid:     (id)       => API.post({ action:'deleteMurid', id }),
 
-  // GURU  (id_karyawan | jabatan | honor_onsite | honor_online | wa | tgl_bergabung | status_ptkp)
+  // GURU
   getGuru:    ()   => API.post({ action:'getGuru' }),
   addGuru:    (d)  => API.post({ action:'addGuru', ...d }),
   updateGuru: (d)  => API.post({ action:'updateGuru', ...d }),
   deleteGuru: (id) => API.post({ action:'deleteGuru', id }),
 
-  // LAPORAN  (murid_id | guru_id | tanggal | subject | analisis | catatan)
+  // LAPORAN
   getLaporan:    (opts={}) => API.post({ action:'getLaporan', ...opts }),
   addLaporan:    (d)       => API.post({ action:'addLaporan', ...d }),
   deleteLaporan: (id)      => API.post({ action:'deleteLaporan', id }),
@@ -42,21 +44,22 @@ const API = {
   saveAbsensi: (tanggal, data) => API.post({ action:'saveAbsensi', tanggal, data }),
 
   // INVOICE
-  getInvoice:          (opts={})                     => API.post({ action:'getInvoice', ...opts }),
-  generateInvoice:     (murid_id, bulan, catatan='') => API.post({ action:'generateInvoice', murid_id, bulan, catatan }),
-  updateInvoiceStatus: (id, status, tgl_kirim)       => API.post({ action:'updateInvoiceStatus', id, status, tgl_kirim }),
-  deleteInvoice:       (id)                          => API.post({ action:'deleteInvoice', id }),
+  getInvoice:           (opts={})                             => API.post({ action:'getInvoice', ...opts }),
+  generateInvoice:      (murid_id, bulan, catatan='', sesi=0) => API.post({ action:'generateInvoice', murid_id, bulan, catatan, sesi }),
+  updateInvoiceStatus:  (id, status, tgl_kirim)               => API.post({ action:'updateInvoiceStatus', id, status, tgl_kirim }),
+  deleteInvoice:        (id)                                  => API.post({ action:'deleteInvoice', id }),
   uploadBukti: (invoice_id, murid_id, bulan, file) =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = async (e) => {
-        try { resolve(await API.post({ action:'uploadBukti', invoice_id, murid_id, bulan, base64:e.target.result, filename:file.name })); }
-        catch(err) { reject(err); }
+        try {
+          resolve(await API.post({ action:'uploadBukti', invoice_id, murid_id, bulan, base64:e.target.result, filename:file.name }));
+        } catch(err) { reject(err); }
       };
       reader.onerror = reject;
       reader.readAsDataURL(file);
     }),
 
-  // SETUP — jalankan sekali untuk buat semua sheet
+  // SETUP
   setup: () => API.post({ action:'setup' }),
 };
