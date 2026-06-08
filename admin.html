@@ -910,7 +910,7 @@ async function loadAbsensiRekap(){
 async function loadInvoice(){
   const tbody=document.getElementById('invoiceTbody');tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px"><span class="spinner"></span></td></tr>';
   try{const rawInv=await API.getInvoice();const arr=Array.isArray(rawInv)?rawInv:[];if(!arr.length){tbody.innerHTML='<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:20px">Belum ada invoice</td></tr>';return;}
-  tbody.innerHTML=arr.sort((a,b)=>b.bulan>a.bulan?1:-1).map(inv=>{
+  tbody.innerHTML=arr.sort((a,b)=>b.bulan>a.bulan?1:b.bulan<a.bulan?-1:b.id>a.id?1:-1).map(inv=>{
     const m=muridById(inv.murid_id);
     if(!m.nama) return '';  // skip invoice yang muridnya sudah tidak ada
     const st=inv.status||'belum_bayar';

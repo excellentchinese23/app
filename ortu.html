@@ -278,7 +278,7 @@ function renderLaporan(){
 }
 
 function renderInvoice(){
-  const sorted=[...invoiceData].sort((a,b)=>b.bulan>a.bulan?1:-1);
+  const sorted=[...invoiceData].sort((a,b)=>b.bulan>a.bulan?1:b.bulan<a.bulan?-1:b.id>a.id?1:-1);
   if(!sorted.length){document.getElementById('invoiceList').innerHTML='<div class="empty-state">📭 Belum ada tagihan</div>';return;}
   const badgeCls=s=>s==='lunas'?'badge-green':s==='menunggu'?'badge-yellow':'badge-red';
   const badgeLbl=s=>s==='lunas'?'Lunas':s==='menunggu'?'Menunggu Konfirmasi':'Belum Bayar';
