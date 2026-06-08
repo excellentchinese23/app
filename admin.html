@@ -674,6 +674,13 @@ function renderGuruRekap(laporan){
 async function confirmPayment(id,btn){try{await API.updateInvoiceStatus(id,'lunas',today());showToast('Pembayaran dikonfirmasi!','success');btn.closest('div').innerHTML='<span class="badge badge-green">Lunas ✓</span>';tabLoaded.invoice=false;}catch(e){showToast('Gagal','error');}}
 async function rejectPayment(id,btn){try{await API.updateInvoiceStatus(id,'belum_bayar','');showToast('Ditolak','');btn.closest('div[style*="flex"]').parentElement.remove();}catch(e){showToast('Gagal','error');}}
 async function markLunas(id){try{await API.updateInvoiceStatus(id,'lunas',today());showToast('Tandai Lunas! ✓','success');tabLoaded.invoice=false;loadInvoice();}catch(e){showToast('Gagal','error');}}
+async function editNominal(id,current){
+  const val=prompt('Edit nominal invoice (tanpa titik/koma):',current||'');
+  if(val===null)return;
+  const nom=Number(val.replace(/\D/g,''));
+  if(!nom){showToast('Nominal tidak valid','error');return;}
+  try{await API.updateInvoiceNominal(id,nom);showToast('Nominal diperbarui!','success');tabLoaded.invoice=false;loadInvoice();}catch(e){showToast('Gagal: '+e.message,'error');}
+}
 async function markBelumBayar(id){if(!confirm('Reset status ke Belum Bayar?'))return;try{await API.updateInvoiceStatus(id,'belum_bayar','');showToast('Status di-reset','');tabLoaded.invoice=false;loadInvoice();}catch(e){showToast('Gagal','error');}}
 
 async function loadLaporan(){
@@ -910,7 +917,8 @@ async function loadInvoice(){
     const bukti=inv.bukti_url?`<img src="${inv.bukti_url}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;cursor:pointer" onclick="window.open('${inv.bukti_url}','_blank')" title="Lihat bukti transfer">`:'<span style="color:var(--muted);font-size:12px">–</span>';
     const btnLunas=st!=='lunas'?`<button class="btn btn-green btn-sm" onclick="markLunas('${inv.id}')">✓ Lunas</button>`:'';
     const btnReset=st!=='belum_bayar'?`<button class="btn btn-yellow btn-sm" onclick="markBelumBayar('${inv.id}')">↩ Reset</button>`:'';
-    return`<tr><td><b>${m.nama||inv.murid_id}</b></td><td>${fmtBulan(inv.bulan)}</td><td>${inv.sesi||'–'}</td><td>${fmtRp(inv.nominal)}</td><td>${statusBadge(st)}</td><td>${bukti}</td><td><div style="display:flex;gap:4px;flex-wrap:wrap">${btnLunas}${btnReset}<button class="btn btn-danger btn-sm" onclick="deleteInv('${inv.id}',this)">🗑</button></div></td></tr>`;
+    const nominalCell=`<span style="cursor:pointer;text-decoration:underline dotted" title="Klik untuk edit nominal" onclick="editNominal('${inv.id}',${inv.nominal||0})">${fmtRp(inv.nominal)}</span>`;
+    return`<tr><td><b>${m.nama||inv.murid_id}</b></td><td>${fmtBulan(inv.bulan)}</td><td>${inv.sesi||'–'}</td><td>${nominalCell}</td><td>${statusBadge(st)}</td><td>${bukti}</td><td><div style="display:flex;gap:4px;flex-wrap:wrap">${btnLunas}${btnReset}<button class="btn btn-danger btn-sm" onclick="deleteInv('${inv.id}',this)">🗑</button></div></td></tr>`;
   }).join('');}
   catch(e){document.getElementById('invoiceTbody').innerHTML='<tr><td colspan="7" style="color:var(--red-err);text-align:center">Gagal</td></tr>';}
 }
