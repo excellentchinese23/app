@@ -333,6 +333,11 @@ tr:hover td{background:#FFFAEC}
 
     <!-- ABSENSI -->
     <div class="tab-page" id="tab-absensi">
+      <!-- KUOTA SESI PANEL -->
+      <div id="kuotaPanel" style="display:none;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">📊 Status Kuota Sesi</div>
+        <div id="kuotaGrid" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+      </div>
       <div class="section-card">
         <div class="card-head"><h3>📋 Input Absensi Harian</h3></div>
         <div id="absenSiapBanner" style="display:none;background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:10px;padding:12px 16px;font-size:13px;color:#DC2626;margin-bottom:14px;cursor:pointer" onclick="showTab('invoice',document.querySelectorAll('.tab-btn')[4])"></div>
@@ -642,8 +647,8 @@ function showTab(name,btn){
       absensiMuridList=[];absensiIsEditMode=false;
       document.getElementById('absenSiapBanner').style.display='none';
       if(!Object.keys(sesiMap).length){
-        API.getSesiAllMurid().then(arr=>{if(Array.isArray(arr))arr.forEach(s=>sesiMap[s.murid_id]=s);renderAbsensiList();}).catch(()=>{});
-      }
+        API.getSesiAllMurid().then(arr=>{if(Array.isArray(arr))arr.forEach(s=>sesiMap[s.murid_id]=s);renderAbsensiList();renderKuotaPanel();}).catch(()=>{});
+      } else { renderKuotaPanel(); }
       loadAbsensiForDate();
     }
     else if(name==='invoice')loadInvoice();
@@ -785,6 +790,41 @@ async function doDeleteMurid(id,nama){if(!confirm(`Hapus murid "${nama}"?`))retu
 // ── ABSENSI ──────────────────────────────────────────────
 let absensiMuridList = [];
 
+function renderKuotaPanel() {
+  const panel = document.getElementById('kuotaPanel');
+  const grid  = document.getElementById('kuotaGrid');
+  if (!panel || !grid) return;
+  const aktif = allMurid.filter(m => m.aktif === 'aktif');
+  // Hanya tampilkan murid yang punya data sesi (sesi > 0) atau sudah penuh
+  const items = aktif.map(m => {
+    const s = sesiMap[m.murid_id || m.id];
+    const quota = s ? (Number(s.sesi_per_invoice) || 8) : (Number(m.sesi_per_invoice) || 8);
+    const sesi  = s ? s.sesi : 0;
+    return { id: m.id, nama: m.nama, sesi, quota, pct: sesi / quota };
+  }).filter(x => x.sesi > 0).sort((a, b) => b.pct - a.pct);
+
+  if (!items.length) { panel.style.display = 'none'; return; }
+  panel.style.display = '';
+
+  grid.innerHTML = items.map(x => {
+    const full   = x.sesi >= x.quota;
+    const near   = !full && x.pct >= 0.75;
+    const bg     = full ? '#FEF2F2' : near ? '#FFFBEB' : '#F0FDF4';
+    const border = full ? '#FCA5A5' : near ? '#FCD34D' : '#86EFAC';
+    const color  = full ? '#DC2626' : near ? '#92400E' : '#166534';
+    const icon   = full ? '🔴' : near ? '🟡' : '🟢';
+    const barW   = Math.min(100, Math.round(x.pct * 100));
+    const barClr = full ? '#DC2626' : near ? '#F59E0B' : '#16A34A';
+    return `<div style="background:${bg};border:1.5px solid ${border};border-radius:10px;padding:8px 12px;min-width:130px;max-width:170px;flex:1">
+      <div style="font-size:12px;font-weight:700;color:${color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${icon} ${x.nama}</div>
+      <div style="margin:5px 0 3px;background:#E5E7EB;border-radius:4px;height:4px;overflow:hidden">
+        <div style="width:${barW}%;height:4px;background:${barClr};border-radius:4px;transition:width .3s"></div>
+      </div>
+      <div style="font-size:11px;font-weight:800;color:${color}">${x.sesi}/${x.quota} sesi${full?' — siap invoice':''}</div>
+    </div>`;
+  }).join('');
+}
+
 async function loadAbsensiForDate() {
   const tanggal = document.getElementById('absenDate').value;
   if (!tanggal) return;
@@ -909,6 +949,7 @@ async function doSaveAbsensi() {
           banner.style.display = 'none';
         }
         renderAbsensiList();
+        renderKuotaPanel();
       }
     } catch(e) {}
   } catch(e) { showToast('Gagal: ' + e.message, 'error'); }
