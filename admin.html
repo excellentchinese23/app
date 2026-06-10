@@ -139,6 +139,8 @@ tr:hover td{background:#FFFAEC}
 .toggle-btn{padding:6px 14px;border-radius:8px;border:1.5px solid var(--border);background:var(--white);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;color:var(--muted)}
 .toggle-btn.hadir{border-color:var(--green);background:#ECFDF5;color:var(--green)}
 .toggle-btn.absen{border-color:var(--red-err);background:#FFF1F2;color:var(--red-err)}
+.sesi-btn{padding:5px 11px;border-radius:8px;border:1.5px solid var(--border);background:var(--white);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;color:var(--muted)}
+.sesi-btn.active{border-color:var(--red2);background:#FFF1F2;color:var(--red2)}
 
 .fee-display{background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;color:var(--dark)}
 
@@ -348,8 +350,14 @@ tr:hover td{background:#FFFAEC}
           </div>
           <div class="form-field" id="absenAddRow" style="flex:1;min-width:220px">
             <label>Tambah Murid yang Hadir</label>
-            <div style="display:flex;gap:8px">
-              <select id="absenMuridPick" style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;background:var(--white);outline:none;color:var(--dark)"><option value="">Pilih murid...</option></select>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <select id="absenMuridPick" style="flex:1;min-width:140px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;background:var(--white);outline:none;color:var(--dark)"><option value="">Pilih murid...</option></select>
+              <div style="display:flex;gap:4px;align-items:center">
+                <span style="font-size:11px;color:var(--muted);font-weight:600">Sesi:</span>
+                <button class="sesi-btn active" id="absenSesiBtn1" onclick="setAbsenSesi(1)">1</button>
+                <button class="sesi-btn" id="absenSesiBtn2" onclick="setAbsenSesi(2)">2</button>
+                <button class="sesi-btn" id="absenSesiBtn3" onclick="setAbsenSesi(3)">3</button>
+              </div>
               <button class="btn btn-primary" onclick="addAbsenMurid()">+ Tambah</button>
             </div>
           </div>
@@ -788,6 +796,15 @@ async function doDeleteMurid(id,nama){if(!confirm(`Hapus murid "${nama}"?`))retu
 
 // ── ABSENSI ──────────────────────────────────────────────
 let absensiMuridList = [];
+let absenSesiPick = 1;
+
+function setAbsenSesi(n) {
+  absenSesiPick = n;
+  [1,2,3].forEach(i => {
+    const btn = document.getElementById('absenSesiBtn'+i);
+    if (btn) btn.classList.toggle('active', i === n);
+  });
+}
 
 function renderKuotaPanel() {
   const panel = document.getElementById('kuotaPanel');
@@ -862,8 +879,9 @@ function addAbsenMurid() {
   if (absensiMuridList.find(x => x.murid_id === id)) { showToast('Sudah ada di list!', ''); return; }
   const m = allMurid.find(x => x.id === id);
   if (!m) return;
-  absensiMuridList.push({ murid_id: id, nama: m.nama, status: 'hadir' });
+  absensiMuridList.push({ murid_id: id, nama: m.nama, status: 'hadir', sesi: absenSesiPick });
   sel.value = '';
+  setAbsenSesi(1); // reset ke 1 setelah tambah
   renderAbsensiList();
 }
 
@@ -874,7 +892,17 @@ function removeAbsenMurid(id) {
 
 function setAbsenStatus(murid_id, status) {
   const idx = absensiMuridList.findIndex(x => x.murid_id === murid_id);
-  if (idx >= 0) { absensiMuridList[idx].status = status; renderAbsensiList(); }
+  if (idx >= 0) {
+    absensiMuridList[idx].status = status;
+    if (status === 'absen') absensiMuridList[idx].sesi = 0;
+    else if (!absensiMuridList[idx].sesi) absensiMuridList[idx].sesi = 1;
+    renderAbsensiList();
+  }
+}
+
+function setAbsenSesiCount(murid_id, n) {
+  const idx = absensiMuridList.findIndex(x => x.murid_id === murid_id);
+  if (idx >= 0) { absensiMuridList[idx].sesi = n; renderAbsensiList(); }
 }
 
 function renderAbsensiList() {
@@ -896,14 +924,20 @@ function renderAbsensiList() {
     if (addRow) addRow.style.display = 'none';
     if (countEl) countEl.textContent = `✅ ${hadirCount} hadir · ❌ ${absenCount} absen`;
     el.innerHTML = '<div style="background:#FFFBEB;border:1.5px solid var(--yellow);border-radius:10px;padding:9px 13px;font-size:12px;font-weight:700;color:#92400E;margin-bottom:10px">✏️ Mode Edit — klik tombol untuk ubah status kehadiran</div>'
-      + absensiMuridList.map(m => `
+      + absensiMuridList.map(m => {
+        const sesiSel = [1,2,3].map(n=>`<button class="sesi-btn${(m.sesi||1)===n?' active':''}" onclick="setAbsenSesiCount('${m.murid_id}',${n})">${n}</button>`).join('');
+        return `
       <div class="absensi-row">
         <span style="font-weight:700;font-size:14px">${m.nama}</span>
-        <div class="toggle-group">
-          <button class="toggle-btn ${m.status==='hadir'?'hadir':''}" onclick="setAbsenStatus('${m.murid_id}','hadir')">✓ Hadir</button>
-          <button class="toggle-btn ${m.status==='absen'?'absen':''}" onclick="setAbsenStatus('${m.murid_id}','absen')">✕ Absen</button>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          ${m.status==='hadir'?`<div style="display:flex;gap:4px;align-items:center"><span style="font-size:11px;color:var(--muted);font-weight:600">Sesi:</span>${sesiSel}</div>`:''}
+          <div class="toggle-group">
+            <button class="toggle-btn ${m.status==='hadir'?'hadir':''}" onclick="setAbsenStatus('${m.murid_id}','hadir')">✓ Hadir</button>
+            <button class="toggle-btn ${m.status==='absen'?'absen':''}" onclick="setAbsenStatus('${m.murid_id}','absen')">✕ Absen</button>
+          </div>
         </div>
-      </div>`).join('');
+      </div>`;
+      }).join('');
   } else {
     if (addRow) addRow.style.display = '';
     if (countEl) countEl.textContent = hadirCount + ' murid hadir';
@@ -912,7 +946,7 @@ function renderAbsensiList() {
         <div style="display:flex;align-items:center;gap:10px">
           <span style="background:#ECFDF5;color:var(--green);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0">✓</span>
           <span style="font-weight:700;font-size:14px">${m.nama}</span>
-          <span class="badge badge-green">Hadir</span>
+          <span class="badge badge-green">${m.sesi||1} sesi</span>
         </div>
         <button class="btn btn-danger btn-sm" onclick="removeAbsenMurid('${m.murid_id}')">✕</button>
       </div>`).join('');
