@@ -346,8 +346,8 @@ tr:hover td{background:#FFFAEC}
             <label>Tanggal</label>
             <input type="date" id="absenDate" onchange="loadAbsensiForDate()">
           </div>
-          <div class="form-field" id="absenAddRow" style="flex:1;min-width:220px;display:none">
-            <label>Tambah murid tambahan</label>
+          <div class="form-field" id="absenAddRow" style="flex:1;min-width:220px">
+            <label>Tambah Murid yang Hadir</label>
             <div style="display:flex;gap:8px">
               <select id="absenMuridPick" style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;background:var(--white);outline:none;color:var(--dark)"><option value="">Pilih murid...</option></select>
               <button class="btn btn-primary" onclick="addAbsenMurid()">+ Tambah</button>
@@ -358,7 +358,6 @@ tr:hover td{background:#FFFAEC}
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px">
           <button class="btn btn-primary" onclick="doSaveAbsensi()">💾 Simpan Absensi</button>
           <span id="absenCount" style="font-size:13px;color:var(--muted)"></span>
-          <span style="font-size:12px;color:var(--muted);margin-left:auto;cursor:pointer;text-decoration:underline" onclick="document.getElementById('absenAddRow').style.display=''">+ Tambah murid lain</span>
         </div>
       </div>
       <div class="section-card">
@@ -835,29 +834,24 @@ async function loadAbsensiForDate() {
   try {
     const ex = await API.getAbsensi({ tanggal });
     const existing = Array.isArray(ex) ? ex : [];
-    const statusMap = {};
-    existing.forEach(a => { statusMap[a.murid_id] = a.status || 'hadir'; });
-    absensiIsEditMode = existing.length > 0;
-
-    // Selalu auto-populate semua murid aktif
-    const aktif = allMurid.filter(m => m.aktif === 'aktif');
-    absensiMuridList = aktif.map(m => ({
-      murid_id: m.id, nama: m.nama,
-      // Data existing → pakai status tersimpan; data baru → default semua hadir
-      status: absensiIsEditMode ? (statusMap[m.id] || 'absen') : 'hadir'
-    }));
-    // Sertakan murid non-aktif yang masih tercatat di tanggal ini
-    existing.forEach(a => {
-      if (!absensiMuridList.find(x => x.murid_id === a.murid_id)) {
-        const m = allMurid.find(x => x.id === a.murid_id);
-        absensiMuridList.push({ murid_id: a.murid_id, nama: m?.nama || a.murid_id, status: a.status || 'hadir' });
-      }
-    });
-  } catch(e) {
-    // Fallback: tetap tampilkan semua murid aktif
-    const aktif = allMurid.filter(m => m.aktif === 'aktif');
-    absensiMuridList = aktif.map(m => ({ murid_id: m.id, nama: m.nama, status: 'hadir' }));
-  }
+    if (existing.length > 0) {
+      absensiIsEditMode = true;
+      const statusMap = {};
+      existing.forEach(a => { statusMap[a.murid_id] = a.status || 'hadir'; });
+      const aktif = allMurid.filter(m => m.aktif === 'aktif');
+      absensiMuridList = aktif.map(m => ({
+        murid_id: m.id, nama: m.nama,
+        status: statusMap[m.id] || 'absen'
+      }));
+      existing.forEach(a => {
+        if (!absensiMuridList.find(x => x.murid_id === a.murid_id)) {
+          const m = allMurid.find(x => x.id === a.murid_id);
+          absensiMuridList.push({ murid_id: a.murid_id, nama: m?.nama || a.murid_id, status: a.status || 'hadir' });
+        }
+      });
+    }
+    // Tanggal baru → kosong, user tambah manual via dropdown
+  } catch(e) {}
   renderAbsensiList();
 }
 
@@ -886,42 +880,43 @@ function setAbsenStatus(murid_id, status) {
 function renderAbsensiList() {
   const el = document.getElementById('absenList');
   const countEl = document.getElementById('absenCount');
+  const addRow = document.getElementById('absenAddRow');
 
   if (!absensiMuridList.length) {
-    el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px">Pilih tanggal untuk memuat daftar murid</div>';
+    el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px">Belum ada murid ditambahkan — gunakan dropdown di atas untuk menambah murid yang hadir hari ini</div>';
     if (countEl) countEl.textContent = '';
+    if (addRow) addRow.style.display = '';
     return;
   }
 
   const hadirCount = absensiMuridList.filter(m => m.status === 'hadir').length;
   const absenCount  = absensiMuridList.filter(m => m.status === 'absen').length;
-  if (countEl) countEl.textContent = `✅ ${hadirCount} hadir · ❌ ${absenCount} absen`;
 
-  const editBanner = absensiIsEditMode
-    ? '<div style="background:#FFFBEB;border:1.5px solid var(--yellow);border-radius:10px;padding:9px 13px;font-size:12px;font-weight:700;color:#92400E;margin-bottom:10px">✏️ Mode Edit — mengubah data absensi yang sudah tersimpan</div>'
-    : '';
-
-  el.innerHTML = editBanner + absensiMuridList.map(m => {
-    const s = sesiMap[m.murid_id];
-    const quota = s ? (s.sesi_per_invoice || 8) : 8;
-    const sesiNum = s ? s.sesi : null;
-    const sesiBadge = sesiNum !== null
-      ? (sesiNum >= quota
-        ? `<span style="background:#FEF2F2;color:#DC2626;border:1px solid #FCA5A5;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700">${sesiNum}/${quota} ⚠️</span>`
-        : `<span style="background:#F0FDF4;color:#16A34A;border:1px solid #86EFAC;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700">${sesiNum}/${quota}</span>`)
-      : '';
-    return `
-    <div class="absensi-row">
-      <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
+  if (absensiIsEditMode) {
+    if (addRow) addRow.style.display = 'none';
+    if (countEl) countEl.textContent = `✅ ${hadirCount} hadir · ❌ ${absenCount} absen`;
+    el.innerHTML = '<div style="background:#FFFBEB;border:1.5px solid var(--yellow);border-radius:10px;padding:9px 13px;font-size:12px;font-weight:700;color:#92400E;margin-bottom:10px">✏️ Mode Edit — klik tombol untuk ubah status kehadiran</div>'
+      + absensiMuridList.map(m => `
+      <div class="absensi-row">
         <span style="font-weight:700;font-size:14px">${m.nama}</span>
-        ${sesiBadge}
-      </div>
-      <div class="toggle-group">
-        <button class="toggle-btn ${m.status==='hadir'?'hadir':''}" onclick="setAbsenStatus('${m.murid_id}','hadir')">✓ Hadir</button>
-        <button class="toggle-btn ${m.status==='absen'?'absen':''}" onclick="setAbsenStatus('${m.murid_id}','absen')">✕ Absen</button>
-      </div>
-    </div>`;
-  }).join('');
+        <div class="toggle-group">
+          <button class="toggle-btn ${m.status==='hadir'?'hadir':''}" onclick="setAbsenStatus('${m.murid_id}','hadir')">✓ Hadir</button>
+          <button class="toggle-btn ${m.status==='absen'?'absen':''}" onclick="setAbsenStatus('${m.murid_id}','absen')">✕ Absen</button>
+        </div>
+      </div>`).join('');
+  } else {
+    if (addRow) addRow.style.display = '';
+    if (countEl) countEl.textContent = hadirCount + ' murid hadir';
+    el.innerHTML = absensiMuridList.map(m => `
+      <div class="absensi-row">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="background:#ECFDF5;color:var(--green);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0">✓</span>
+          <span style="font-weight:700;font-size:14px">${m.nama}</span>
+          <span class="badge badge-green">Hadir</span>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="removeAbsenMurid('${m.murid_id}')">✕</button>
+      </div>`).join('');
+  }
 }
 
 async function doSaveAbsensi() {
