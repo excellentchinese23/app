@@ -48,6 +48,7 @@ const API = {
   generateInvoice:      (murid_id, bulan, catatan='', sesi=0) => API.post({ action:'generateInvoice', murid_id, bulan, catatan, sesi }),
   updateInvoiceStatus:  (id, status, tgl_kirim)               => API.post({ action:'updateInvoiceStatus', id, status, tgl_kirim }),
   updateInvoiceNominal: (id, nominal)                         => API.post({ action:'updateInvoiceNominal', id, nominal }),
+  updateSesiKoreksi:    (murid_id, val)                        => API.post({ action:'updateSesiKoreksi', murid_id, val }),
   deleteInvoice:        (id)                                  => API.post({ action:'deleteInvoice', id }),
   uploadBukti: (invoice_id, murid_id, bulan, file) =>
     new Promise((resolve, reject) => {

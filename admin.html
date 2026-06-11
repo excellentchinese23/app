@@ -631,13 +631,14 @@ async function initApp(){
 }
 
 function populateSelects(){
-  document.getElementById('filterLaporanMurid').innerHTML='<option value="">Semua Murid</option>'+allMurid.map(m=>`<option value="${m.id}">${m.nama}</option>`).join('');
-  const po='<option value="">Pilih Murid...</option>'+allMurid.map(m=>`<option value="${m.id}">${m.nama}</option>`).join('');
+  const sorted=[...allMurid].sort((a,b)=>a.nama.localeCompare(b.nama,'id'));
+  document.getElementById('filterLaporanMurid').innerHTML='<option value="">Semua Murid</option>'+sorted.map(m=>`<option value="${m.id}">${m.nama}</option>`).join('');
+  const po='<option value="">Pilih Murid...</option>'+sorted.map(m=>`<option value="${m.id}">${m.nama}</option>`).join('');
   document.querySelectorAll('.sel-murid').forEach(s=>s.innerHTML=po);
   const go='<option value="">Pilih Guru...</option>'+allGuru.map(g=>`<option value="${g.id}">${g.nama}</option>`).join('');
   document.querySelectorAll('.sel-guru').forEach(s=>s.innerHTML=go);
-  // Absensi dropdown (aktif saja)
-  const aktif=allMurid.filter(m=>m.aktif==='aktif');
+  // Absensi dropdown (aktif saja, urut abjad)
+  const aktif=sorted.filter(m=>m.aktif==='aktif');
   const ap=document.getElementById('absenMuridPick');
   if(ap) ap.innerHTML='<option value="">Pilih murid...</option>'+aktif.map(m=>`<option value="${m.id}">${m.nama}</option>`).join('');
 }
@@ -658,7 +659,10 @@ function showTab(name,btn){
       } else { renderKuotaPanel(); }
       loadAbsensiForDate();
     }
-    else if(name==='invoice')loadInvoice();
+    else if(name==='invoice'){
+      if(!Object.keys(sesiMap).length){API.getSesiAllMurid().then(arr=>{if(Array.isArray(arr))arr.forEach(s=>sesiMap[s.murid_id]=s);}).catch(()=>{});}
+      loadInvoice();
+    }
     else if(name==='slipgaji')loadSlipGaji();
   }
 }
@@ -694,7 +698,50 @@ function renderGuruRekap(laporan){
 
 async function confirmPayment(id,btn){try{await API.updateInvoiceStatus(id,'lunas',today());showToast('Pembayaran dikonfirmasi!','success');btn.closest('div').innerHTML='<span class="badge badge-green">Lunas ✓</span>';tabLoaded.invoice=false;}catch(e){showToast('Gagal','error');}}
 async function rejectPayment(id,btn){try{await API.updateInvoiceStatus(id,'belum_bayar','');showToast('Ditolak','');btn.closest('div[style*="flex"]').parentElement.remove();}catch(e){showToast('Gagal','error');}}
-async function markLunas(id){try{await API.updateInvoiceStatus(id,'lunas',today());showToast('Tandai Lunas! ✓','success');tabLoaded.invoice=false;loadInvoice();}catch(e){showToast('Gagal','error');}}
+async function markLunas(id, murid_id) {
+  // Pastikan sesiMap terisi
+  if (murid_id && !Object.keys(sesiMap).length) {
+    try {
+      const arr = await API.getSesiAllMurid();
+      if (Array.isArray(arr)) arr.forEach(s => sesiMap[s.murid_id] = s);
+    } catch(e) {}
+  }
+  const s = murid_id ? sesiMap[murid_id] : null;
+  if (s) {
+    const sesi  = s.sesi || 0;
+    const quota = Number(s.sesi_per_invoice) || 8;
+    // BLOK jika sesi kurang
+    if (sesi < quota) {
+      showToast(`❌ Tidak bisa lunas — sesi baru ${sesi}/${quota}, kurang ${quota - sesi} pertemuan lagi`, 'error');
+      return;
+    }
+    const carryOver = sesi - quota;
+    const msg = carryOver > 0
+      ? `Tandai Lunas untuk ${s.nama}?\n\nSesi: ${sesi}/${quota}\nSisa ${carryOver} sesi akan dibawa ke periode berikutnya.`
+      : `Tandai Lunas untuk ${s.nama}?\n\nSesi: ${sesi}/${quota} — pas, tidak ada sisa sesi.`;
+    if (!confirm(msg)) return;
+    try {
+      await Promise.all([
+        API.updateInvoiceStatus(id, 'lunas', today()),
+        API.updateSesiKoreksi(murid_id, carryOver),
+      ]);
+      sesiMap[murid_id] = { ...s, sesi: carryOver, sesi_raw: 0, sesi_koreksi: carryOver };
+      showToast(`Lunas! ✓${carryOver > 0 ? ' Carry-over: ' + carryOver + ' sesi' : ''}`, 'success');
+      tabLoaded.invoice = false;
+      loadInvoice();
+      renderKuotaPanel();
+    } catch(e) { showToast('Gagal: ' + e.message, 'error'); }
+  } else {
+    // Tidak ada data sesi — konfirmasi simpel
+    if (!confirm('Tandai Lunas?')) return;
+    try {
+      await API.updateInvoiceStatus(id, 'lunas', today());
+      showToast('Tandai Lunas! ✓', 'success');
+      tabLoaded.invoice = false;
+      loadInvoice();
+    } catch(e) { showToast('Gagal', 'error'); }
+  }
+}
 async function editNominal(id,current){
   const val=prompt('Edit nominal invoice (tanpa titik/koma):',current||'');
   if(val===null)return;
@@ -703,6 +750,24 @@ async function editNominal(id,current){
   try{await API.updateInvoiceNominal(id,nom);showToast('Nominal diperbarui!','success');tabLoaded.invoice=false;loadInvoice();}catch(e){showToast('Gagal: '+e.message,'error');}
 }
 async function markBelumBayar(id){if(!confirm('Reset status ke Belum Bayar?'))return;try{await API.updateInvoiceStatus(id,'belum_bayar','');showToast('Status di-reset','');tabLoaded.invoice=false;loadInvoice();}catch(e){showToast('Gagal','error');}}
+
+async function editSesiKoreksi(murid_id) {
+  const s = sesiMap[murid_id];
+  if (!s) { showToast('Data sesi belum dimuat', 'error'); return; }
+  const currentTotal = s.sesi || 0;
+  const raw = s.sesi_raw !== undefined ? s.sesi_raw : currentTotal;
+  const val = prompt(`Edit sesi berjalan: ${s.nama}\nSaat ini: ${currentTotal} sesi\n\nMasukkan nilai yang benar:`, currentTotal);
+  if (val === null) return;
+  const desired = parseInt(val, 10);
+  if (isNaN(desired) || desired < 0) { showToast('Angka tidak valid', 'error'); return; }
+  const newKoreksi = desired - raw;
+  try {
+    await API.updateSesiKoreksi(murid_id, newKoreksi);
+    sesiMap[murid_id] = { ...s, sesi: desired, sesi_koreksi: newKoreksi };
+    showToast(`Sesi ${s.nama} → ${desired}`, 'success');
+    renderKuotaPanel();
+  } catch(e) { showToast('Gagal: ' + e.message, 'error'); }
+}
 
 async function loadLaporan(){
   const tbody=document.getElementById('laporanTbody');tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px"><span class="spinner"></span></td></tr>';
@@ -811,13 +876,14 @@ function renderKuotaPanel() {
   const grid  = document.getElementById('kuotaGrid');
   if (!panel || !grid) return;
   const aktif = allMurid.filter(m => m.aktif === 'aktif');
-  // Hanya tampilkan murid yang punya data sesi (sesi > 0) atau sudah penuh
+  // Tampilkan semua murid aktif yang punya data sesi, urut abjad
   const items = aktif.map(m => {
-    const s = sesiMap[m.murid_id || m.id];
-    const quota = s ? (Number(s.sesi_per_invoice) || 8) : (Number(m.sesi_per_invoice) || 8);
-    const sesi  = s ? s.sesi : 0;
-    return { id: m.id, nama: m.nama, sesi, quota, pct: sesi / quota };
-  }).filter(x => x.sesi > 0).sort((a, b) => b.pct - a.pct);
+    const s = sesiMap[m.id];
+    const quota   = s ? (Number(s.sesi_per_invoice) || 8) : (Number(m.sesi_per_invoice) || 8);
+    const sesi    = s ? s.sesi : 0;
+    const sesiRaw = s ? (s.sesi_raw !== undefined ? s.sesi_raw : sesi) : 0;
+    return { id: m.id, nama: m.nama, sesi, sesiRaw, quota, pct: quota > 0 ? sesi / quota : 0 };
+  }).filter(x => x.sesi > 0).sort((a, b) => a.nama.localeCompare(b.nama, 'id'));
 
   if (!items.length) { panel.style.display = 'none'; return; }
   panel.style.display = '';
@@ -832,7 +898,10 @@ function renderKuotaPanel() {
     const barW   = Math.min(100, Math.round(x.pct * 100));
     const barClr = full ? '#DC2626' : near ? '#F59E0B' : '#16A34A';
     return `<div style="background:${bg};border:1.5px solid ${border};border-radius:10px;padding:8px 12px;min-width:130px;max-width:170px;flex:1">
-      <div style="font-size:12px;font-weight:700;color:${color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${icon} ${x.nama}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:4px">
+        <div style="font-size:12px;font-weight:700;color:${color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${icon} ${x.nama}</div>
+        <button onclick="editSesiKoreksi('${x.id}')" title="Edit sesi berjalan" style="background:none;border:none;cursor:pointer;font-size:12px;padding:0;flex-shrink:0;opacity:.7">✏️</button>
+      </div>
       <div style="margin:5px 0 3px;background:#E5E7EB;border-radius:4px;height:4px;overflow:hidden">
         <div style="width:${barW}%;height:4px;background:${barClr};border-radius:4px;transition:width .3s"></div>
       </div>
@@ -957,7 +1026,7 @@ async function doSaveAbsensi() {
   const tanggal = document.getElementById('absenDate').value;
   if (!tanggal) { showToast('Pilih tanggal!', 'error'); return; }
   if (!absensiMuridList.length) { showToast('Tambahkan minimal 1 murid!', 'error'); return; }
-  const data = absensiMuridList.map(m => ({ murid_id: m.murid_id, nama: m.nama, status: m.status || 'hadir' }));
+  const data = absensiMuridList.map(m => ({ murid_id: m.murid_id, nama: m.nama, status: m.status || 'hadir', sesi: m.status === 'absen' ? 0 : (Number(m.sesi) || 1) }));
   try {
     await API.saveAbsensi(tanggal, data);
     const hadirIds = data.filter(d => d.status === 'hadir').map(d => d.murid_id);
@@ -1014,7 +1083,7 @@ async function loadInvoice(){
     if(!m.nama) return '';  // skip invoice yang muridnya sudah tidak ada
     const st=inv.status||'belum_bayar';
     const bukti=inv.bukti_url?`<img src="${inv.bukti_url}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;cursor:pointer" onclick="window.open('${inv.bukti_url}','_blank')" title="Lihat bukti transfer">`:'<span style="color:var(--muted);font-size:12px">–</span>';
-    const btnLunas=st!=='lunas'?`<button class="btn btn-green btn-sm" onclick="markLunas('${inv.id}')">✓ Lunas</button>`:'';
+    const btnLunas=st!=='lunas'?`<button class="btn btn-green btn-sm" onclick="markLunas('${inv.id}','${inv.murid_id}')">✓ Lunas</button>`:'';
     const btnReset=st!=='belum_bayar'?`<button class="btn btn-yellow btn-sm" onclick="markBelumBayar('${inv.id}')">↩ Reset</button>`:'';
     const nominalCell=`<span style="cursor:pointer;text-decoration:underline dotted" title="Klik untuk edit nominal" onclick="editNominal('${inv.id}',${inv.nominal||0})">${fmtRp(inv.nominal)}</span>`;
     return`<tr><td><b>${m.nama||inv.murid_id}</b></td><td>${fmtBulan(inv.bulan)}</td><td>${inv.sesi||'–'}</td><td>${nominalCell}</td><td>${statusBadge(st)}</td><td>${bukti}</td><td><div style="display:flex;gap:4px;flex-wrap:wrap">${btnLunas}${btnReset}<button class="btn btn-danger btn-sm" onclick="deleteInv('${inv.id}',this)">🗑</button></div></td></tr>`;
