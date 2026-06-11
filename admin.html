@@ -648,17 +648,19 @@ function showTab(name,btn){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   btn.classList.add('active');
+  // Absensi: selalu reload setiap kali buka tab (state tidak dibiarkan basi)
+  if(name==='absensi'){
+    absensiMuridList=[];absensiIsEditMode=false;
+    document.getElementById('absenSiapBanner').style.display='none';
+    if(!Object.keys(sesiMap).length){
+      API.getSesiAllMurid().then(arr=>{if(Array.isArray(arr))arr.forEach(s=>sesiMap[s.murid_id]=s);renderAbsensiList();renderKuotaPanel();}).catch(()=>{});
+    } else { renderKuotaPanel(); }
+    loadAbsensiForDate();
+    return;
+  }
   if(!tabLoaded[name]){tabLoaded[name]=true;
     if(name==='laporan')loadLaporan();
     else if(name==='murid')renderMuridTable();
-    else if(name==='absensi'){
-      absensiMuridList=[];absensiIsEditMode=false;
-      document.getElementById('absenSiapBanner').style.display='none';
-      if(!Object.keys(sesiMap).length){
-        API.getSesiAllMurid().then(arr=>{if(Array.isArray(arr))arr.forEach(s=>sesiMap[s.murid_id]=s);renderAbsensiList();renderKuotaPanel();}).catch(()=>{});
-      } else { renderKuotaPanel(); }
-      loadAbsensiForDate();
-    }
     else if(name==='invoice'){
       if(!Object.keys(sesiMap).length){API.getSesiAllMurid().then(arr=>{if(Array.isArray(arr))arr.forEach(s=>sesiMap[s.murid_id]=s);}).catch(()=>{});}
       loadInvoice();
@@ -990,7 +992,7 @@ function renderAbsensiList() {
   const absenCount  = absensiMuridList.filter(m => m.status === 'absen').length;
 
   if (absensiIsEditMode) {
-    if (addRow) addRow.style.display = 'none';
+    if (addRow) addRow.style.display = ''; // dropdown tetap tampil di mode edit
     if (countEl) countEl.textContent = `✅ ${hadirCount} hadir · ❌ ${absenCount} absen`;
     el.innerHTML = '<div style="background:#FFFBEB;border:1.5px solid var(--yellow);border-radius:10px;padding:9px 13px;font-size:12px;font-weight:700;color:#92400E;margin-bottom:10px">✏️ Mode Edit — klik tombol untuk ubah status kehadiran</div>'
       + absensiMuridList.map(m => {
@@ -1060,6 +1062,7 @@ async function loadAbsensiRekap(){
     // Refresh allMurid + fetch absensi sekaligus agar data selalu fresh
     const [rawAbsensi, freshMurid] = await Promise.all([API.getAbsensi({bulan}), API.getMurid()]);
     allMurid = freshMurid;
+    populateSelects();
     const arr = Array.isArray(rawAbsensi) ? rawAbsensi : [];
     // Hitung hadir per murid
     const map={};
